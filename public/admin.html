@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Harderwold Tycoon - Game Master</title>
+<style>
+  /* colours as tokens: light by default, dark when the system asks for it or the user picks it (data-theme) */
+  :root { color-scheme: light; --teal: #009ba8; --ink: #17242a; --mut: #687880; --bg: #f3f5f4; --card: #fff; --line: #e1e6e5;
+    --field: #fff; --field-line: #c9d3d2; --btn: #fff; --sel: #e1f4f5; --soft: #eef2f1; --bar: #e8eceb; --ev: #33464d;
+    --ok: #17713b; --warn: #b25a00; --bad: #b0261f; --bad-line: #d9423a; --on-teal: #fff;
+    --ph: #eee; --ph-closed-bg: #fde2e0; --ph-closed: #a3221a; --ph-open-bg: #dcf5e5; --ph-move-bg: #fff1d6; --ph-move: #8a5a00;
+    --tag-bg: #fff1e3; --tag: #a85a10; --tag-in-bg: #e1f4f5; --tag-in: #00727c; --tag-out-bg: #e7eafc; --tag-out: #3446a8; }
+  :root[data-theme="dark"] { color-scheme: dark; --teal: #2bc0c8; --ink: #e6eef0; --mut: #93a4ab; --bg: #0f1719; --card: #172226; --line: #26353a;
+    --field: #0f1a1d; --field-line: #34474d; --btn: #1d2a2e; --sel: #12393d; --soft: #22323a; --bar: #26353a; --ev: #b7c7cc;
+    --ok: #5cd08a; --warn: #f0a24a; --bad: #ff7a70; --bad-line: #e0574e; --on-teal: #06262a;
+    --ph: #26353a; --ph-closed-bg: #4a1c19; --ph-closed: #ffb3ad; --ph-open-bg: #133a24; --ph-move-bg: #3d2f12; --ph-move: #ffd38a;
+    --tag-bg: #3d2a14; --tag: #ffc37a; --tag-in-bg: #12393d; --tag-in: #7fe0e6; --tag-out-bg: #232a52; --tag-out: #aab6ff; }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { color-scheme: dark; --teal: #2bc0c8; --ink: #e6eef0; --mut: #93a4ab; --bg: #0f1719; --card: #172226; --line: #26353a;
+    --field: #0f1a1d; --field-line: #34474d; --btn: #1d2a2e; --sel: #12393d; --soft: #22323a; --bar: #26353a; --ev: #b7c7cc;
+    --ok: #5cd08a; --warn: #f0a24a; --bad: #ff7a70; --bad-line: #e0574e; --on-teal: #06262a;
+    --ph: #26353a; --ph-closed-bg: #4a1c19; --ph-closed: #ffb3ad; --ph-open-bg: #133a24; --ph-move-bg: #3d2f12; --ph-move: #ffd38a;
+    --tag-bg: #3d2a14; --tag: #ffc37a; --tag-in-bg: #12393d; --tag-in: #7fe0e6; --tag-out-bg: #232a52; --tag-out: #aab6ff; } }
+  * { box-sizing: border-box; }
+  body { margin: 0; font: 14px/1.45 Inter, "Segoe UI", system-ui, -apple-system, Roboto, Arial, sans-serif; color: var(--ink); background: var(--bg); }
+  .wrap { max-width: 1400px; margin: 0 auto; padding: 16px; }
+  header { display: flex; flex-wrap: wrap; align-items: baseline; gap: 14px; margin-bottom: 12px; }
+  header h1 { font-size: 20px; margin: 0; }
+  header a, a { color: var(--teal); font-weight: 600; }
+  .muted { color: var(--mut); } .warn { color: var(--warn); font-weight: 600; } .tdok { color: var(--ok); font-weight: 600; }
+  .grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 12px; }
+  @media (max-width: 1000px) { .grid, .grid2 { grid-template-columns: 1fr; } }
+  .panel { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; max-height: 420px; overflow: auto; }
+  h2 { font-size: 15px; margin: 0 0 8px; } h3 { font-size: 14px; margin: 14px 0 6px; }
+  button { font: inherit; color: var(--ink); border: 1px solid var(--field-line); background: var(--btn); border-radius: 8px; padding: 6px 10px; cursor: pointer; }
+  button:hover { border-color: var(--teal); } button:disabled { opacity: 0.5; cursor: default; }
+  button.go { background: var(--teal); color: var(--on-teal); border-color: var(--teal); font-weight: 600; }
+  button.sel { background: var(--sel); border-color: var(--teal); }
+  button.warnbtn { border-color: var(--bad-line); color: var(--bad); }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0; } .chips small { color: var(--mut); }
+  .inline { display: flex; gap: 6px; align-items: center; margin: 6px 0; }
+  input { font: inherit; font-size: 15px; color: var(--ink); background: var(--field); padding: 9px 12px; min-height: 40px; border: 1px solid var(--field-line); border-radius: 8px; flex: 1; min-width: 0; }
+  input:focus, select:focus, textarea:focus { outline: 2px solid var(--teal); outline-offset: -1px; }
+  /* number and date fields keep a fixed, comfortable width next to their explanation */
+  input[type=number] { flex: 0 0 120px !important; max-width: 120px !important; width: 120px; text-align: right; }
+  input[type=datetime-local] { flex: 0 0 240px; }
+  input[type=checkbox] { flex: 0 0 auto !important; width: 20px; height: 20px; min-height: 0; accent-color: var(--teal); }
+  input[type=range] { accent-color: var(--teal); }
+  .inline > span, .inline > label + span { flex: 1; }
+  .btngrid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-top: 8px; }
+  .gate { padding: 4px 0; } .ph { font-weight: 700; padding: 1px 8px; border-radius: 6px; background: var(--ph); }
+  .ph.CLOSED { background: var(--ph-closed-bg); color: var(--ph-closed); } .ph.OPEN { background: var(--ph-open-bg); color: var(--ok); } .ph.OPENING, .ph.CLOSING { background: var(--ph-move-bg); color: var(--ph-move); }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 6px; } td { border-top: 1px solid var(--line); padding: 3px 4px; }
+  .tabs { display: flex; gap: 6px; margin: 14px 0 8px; }
+  .tasks { display: grid; grid-template-columns: repeat(auto-fill, minmax(420px, 1fr)); gap: 10px; }
+  .card { background: var(--card); border: 1px solid var(--line); border-left: 5px solid #f08a24; border-radius: 12px; padding: 10px 12px; }
+  .card.claimed { border-left-color: var(--teal); }
+  .card .row { display: flex; gap: 8px; align-items: center; } .card .pts { margin-left: auto; font-weight: 700; color: var(--teal); }
+  .tag { font-size: 11px; font-weight: 800; letter-spacing: .4px; padding: 2px 6px; border-radius: 5px; background: var(--tag-bg); color: var(--tag); }
+  .tag.checkin { background: var(--tag-in-bg); color: var(--tag-in); } .tag.checkout { background: var(--tag-out-bg); color: var(--tag-out); }
+  .desc { margin: 6px 0; } .meta { display: flex; flex-direction: column; color: var(--mut); font-size: 12.5px; }
+  .btns { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; align-items: center; }
+  code { background: var(--soft); padding: 0 4px; border-radius: 4px; font-size: 12px; }
+  .ok { color: var(--ok); font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 12px; } .err { color: var(--bad); font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 12px; }
+  .ev { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 12px; color: var(--ev); }
+  .done { color: var(--mut); font-size: 13px; }
+  nav.tabs button { font-weight: 600; }
+  .kpis { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 10px; }
+  .kpi { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 10px 14px; } .kpi b { font-size: 22px; display: block; }
+  .bar { height: 8px; background: var(--bar); border-radius: 4px; overflow: hidden; margin-top: 4px; } .bar i { display: block; height: 100%; background: var(--teal); }
+  textarea { font: 13px/1.4 ui-monospace, Menlo, Consolas, monospace; color: var(--ink); background: var(--field); width: 100%; min-height: 160px; padding: 8px; border: 1px solid var(--field-line); border-radius: 8px; }
+  select { font: inherit; font-size: 15px; color: var(--ink); background: var(--field); padding: 9px 12px; min-height: 40px; border: 1px solid var(--field-line); border-radius: 8px; }
+  .form { display: grid; grid-template-columns: 140px 1fr; gap: 6px 10px; align-items: center; } .form label { color: var(--mut); }
+  .panel.tall { max-height: none; }
+  td.num { text-align: right; font-variant-numeric: tabular-nums; }
+  .pill { font-size: 11px; font-weight: 700; padding: 1px 7px; border-radius: 6px; background: var(--soft); }
+  .theme { font-weight: 600; }
+</style>
+</head>
+<body>
+<script>try { var t = localStorage.getItem("hw.theme"); if (t === "dark" || t === "light") document.documentElement.dataset.theme = t; } catch (e) {}</script>
+<div id="root"></div>
+<script type="module" src="/web/admin.js"></script>
+</body>
+</html>

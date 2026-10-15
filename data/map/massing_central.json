@@ -1,0 +1,338 @@
+{
+ "comment": "Bouwmassa van het centrumgebouw en overige voorzieningen, afgeleid van de buitenmuren en binnenmuren in AHT_Plat.pdf (PDF-punten). Per vleugel: hoekpunten NW, NO, ZO, ZW; goothoogte, dakhelling en nokrichting zijn ARTISTIEKE AANNAMES (de PDF toont alleen plattegronden). ridge: 'u' = nok parallel aan de lange gevel (oost-west), 'v' = nok noord-zuid (topgevel naar de camera); split = aantal naast elkaar liggende zadeldaken.",
+ "rotationDeg": 6.7,
+ "wings": [
+  {
+   "id": "RW",
+   "name": "Entree & receptie",
+   "facilities": [
+    "A",
+    "W"
+   ],
+   "corners": [
+    [
+     394.5,
+     204.8
+    ],
+    [
+     418.9,
+     207.1
+    ],
+    [
+     417.4,
+     220.4
+    ],
+    [
+     393.1,
+     217.7
+    ]
+   ],
+   "eaveM": 5.0,
+   "pitchDeg": 30,
+   "ridge": "u",
+   "style": "hall"
+  },
+  {
+   "id": "J",
+   "name": "Zwembad",
+   "facilities": [
+    "J"
+   ],
+   "corners": [
+    [
+     393.1,
+     217.7
+    ],
+    [
+     417.4,
+     220.4
+    ],
+    [
+     416.3,
+     232.4
+    ],
+    [
+     391.6,
+     229.3
+    ]
+   ],
+   "eaveM": 5.6,
+   "pitchDeg": 34,
+   "ridge": "v",
+   "split": 2,
+   "style": "pool",
+   "sign": {
+    "text": "Harderwold",
+    "sub": "Receptie  ·  Zwembad"
+   }
+  },
+  {
+   "id": "D",
+   "name": "Verbinding",
+   "facilities": [
+    "D"
+   ],
+   "corners": [
+    [
+     418.6,
+     212.4
+    ],
+    [
+     427.0,
+     213.5
+    ],
+    [
+     425.1,
+     229.8
+    ],
+    [
+     416.6,
+     228.9
+    ]
+   ],
+   "eaveM": 3.9,
+   "roof": "green",
+   "style": "link"
+  },
+  {
+   "id": "N",
+   "name": "ParkShop, Beautysalon, Wasserette, Serviceruimte",
+   "facilities": [
+    "V",
+    "F",
+    "M",
+    "I"
+   ],
+   "corners": [
+    [
+     429.5,
+     193.6
+    ],
+    [
+     459.8,
+     197.4
+    ],
+    [
+     458.6,
+     208.9
+    ],
+    [
+     428.3,
+     205.1
+    ]
+   ],
+   "eaveM": 4.2,
+   "pitchDeg": 30,
+   "ridge": "u",
+   "style": "shop"
+  },
+  {
+   "id": "T",
+   "name": "Indoorspeelparadijs",
+   "facilities": [
+    "T"
+   ],
+   "corners": [
+    [
+     434.1,
+     199.2
+    ],
+    [
+     453.8,
+     201.4
+    ],
+    [
+     451.6,
+     220.6
+    ],
+    [
+     432.2,
+     218.4
+    ]
+   ],
+   "eaveM": 6.0,
+   "pitchDeg": 26,
+   "ridge": "u",
+   "style": "hall"
+  },
+  {
+   "id": "CK",
+   "name": "Bowling & squash",
+   "facilities": [
+    "C",
+    "K"
+   ],
+   "corners": [
+    [
+     426.6,
+     217.2
+    ],
+    [
+     451.6,
+     220.6
+    ],
+    [
+     449.9,
+     235.5
+    ],
+    [
+     424.8,
+     232.4
+    ]
+   ],
+   "eaveM": 5.6,
+   "pitchDeg": 34,
+   "ridge": "v",
+   "split": 2,
+   "style": "hall"
+  },
+  {
+   "id": "G",
+   "name": "De Brasserie & Snackbar",
+   "facilities": [
+    "G",
+    "H"
+   ],
+   "corners": [
+    [
+     424.8,
+     232.4
+    ],
+    [
+     449.9,
+     235.5
+    ],
+    [
+     449.2,
+     242.2
+    ],
+    [
+     423.6,
+     241.6
+    ]
+   ],
+   "eaveM": 4.3,
+   "pitchDeg": 30,
+   "ridge": "u",
+   "style": "brasserie",
+   "terrace": true
+  },
+  {
+   "id": "O",
+   "name": "Sports Arena",
+   "facilities": [
+    "O"
+   ],
+   "corners": [
+    [
+     436.8,
+     151.2
+    ],
+    [
+     458.3,
+     153.9
+    ],
+    [
+     457.0,
+     161.7
+    ],
+    [
+     436.6,
+     159.0
+    ]
+   ],
+   "eaveM": 4.6,
+   "pitchDeg": 16,
+   "ridge": "u",
+   "style": "hall",
+   "rotationDeg": 7.0,
+   "note": "lager gehouden (aanname) zodat de inrijslagboom Oost op de hoofdweg zichtbaar blijft"
+  },
+  {
+   "id": "TD",
+   "name": "Technische dienst",
+   "facilities": [
+    "TD"
+   ],
+   "corners": [
+    [
+     395.0,
+     190.6
+    ],
+    [
+     400.4,
+     191.2
+    ],
+    [
+     399.8,
+     197.6
+    ],
+    [
+     394.4,
+     197.0
+    ]
+   ],
+   "eaveM": 3.0,
+   "pitchDeg": 32,
+   "ridge": "v",
+   "style": "workshop",
+   "sign": {
+    "text": "TD",
+    "sub": "Technische dienst"
+   }
+  }
+ ],
+ "tent": {
+  "id": "Y",
+  "name": "De Tent",
+  "pts": [
+   [
+    388.3,
+    255.6
+   ],
+   [
+    384.5,
+    249.1
+   ],
+   [
+    388.9,
+    246.6
+   ],
+   [
+    392.6,
+    253.1
+   ]
+  ]
+ },
+ "serviceYard": {
+  "comment": "Lichte servicestrook uit de PDF langs de westgevel van de receptie: dienstterrein van de TD (klinkers), aan de pleinzijde afgesloten met paaltjes. Aanname.",
+  "pts": [
+   [
+    389.2,
+    186.3
+   ],
+   [
+    394.7,
+    186.9
+   ],
+   [
+    394.1,
+    214.9
+   ],
+   [
+    388.8,
+    214.3
+   ]
+  ],
+  "bollards": [
+   [
+    389.6,
+    187.3
+   ],
+   [
+    394.4,
+    187.8
+   ]
+  ]
+ }
+}

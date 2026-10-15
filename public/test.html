@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Harderwold Tycoon - testinterface</title>
+<style>
+  :root { --teal: #009ba8; --ink: #17242a; --mut: #687880; --bg: #f3f5f4; --card: #fff; --line: #e1e6e5; }
+  * { box-sizing: border-box; }
+  body { margin: 0; font: 14px/1.45 Inter, "Segoe UI", system-ui, -apple-system, Roboto, Arial, sans-serif; color: var(--ink); background: var(--bg); }
+  .wrap { max-width: 1400px; margin: 0 auto; padding: 16px; }
+  header { display: flex; flex-wrap: wrap; align-items: baseline; gap: 14px; margin-bottom: 12px; }
+  header h1 { font-size: 20px; margin: 0; }
+  header a { color: var(--teal); font-weight: 600; }
+  .muted { color: var(--mut); } .warn { color: #b25a00; font-weight: 600; } .tdok { color: #17713b; font-weight: 600; }
+  .grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 12px; }
+  @media (max-width: 1000px) { .grid, .grid2 { grid-template-columns: 1fr; } }
+  .panel { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; max-height: 420px; overflow: auto; }
+  h2 { font-size: 15px; margin: 0 0 8px; } h3 { font-size: 14px; margin: 14px 0 6px; }
+  button { font: inherit; border: 1px solid #c9d3d2; background: #fff; border-radius: 8px; padding: 6px 10px; cursor: pointer; }
+  button:hover { border-color: var(--teal); } button:disabled { opacity: 0.5; cursor: default; }
+  button.go { background: var(--teal); color: #fff; border-color: var(--teal); font-weight: 600; }
+  button.sel { background: #e1f4f5; border-color: var(--teal); }
+  button.warnbtn { border-color: #d9423a; color: #b0261f; }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0; } .chips small { color: var(--mut); }
+  .inline { display: flex; gap: 6px; align-items: center; margin: 6px 0; } input { font: inherit; padding: 6px 8px; border: 1px solid #c9d3d2; border-radius: 8px; flex: 1; min-width: 0; }
+  .btngrid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-top: 8px; }
+  .gate { padding: 4px 0; } .ph { font-weight: 700; padding: 1px 8px; border-radius: 6px; background: #eee; }
+  .ph.CLOSED { background: #fde2e0; color: #a3221a; } .ph.OPEN { background: #dcf5e5; color: #17713b; } .ph.OPENING, .ph.CLOSING { background: #fff1d6; color: #8a5a00; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 6px; } td { border-top: 1px solid var(--line); padding: 3px 4px; }
+  .tabs { display: flex; gap: 6px; margin: 14px 0 8px; }
+  .tasks { display: grid; grid-template-columns: repeat(auto-fill, minmax(420px, 1fr)); gap: 10px; }
+  .card { background: var(--card); border: 1px solid var(--line); border-left: 5px solid #f08a24; border-radius: 12px; padding: 10px 12px; }
+  .card.claimed { border-left-color: var(--teal); }
+  .card .row { display: flex; gap: 8px; align-items: center; } .card .pts { margin-left: auto; font-weight: 700; color: var(--teal); }
+  .tag { font-size: 11px; font-weight: 800; letter-spacing: .4px; padding: 2px 6px; border-radius: 5px; background: #fff1e3; color: #a85a10; }
+  .tag.checkin { background: #e1f4f5; color: #00727c; } .tag.checkout { background: #e7eafc; color: #3446a8; }
+  .desc { margin: 6px 0; } .meta { display: flex; flex-direction: column; color: var(--mut); font-size: 12.5px; }
+  .btns { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; align-items: center; }
+  code { background: #eef2f1; padding: 0 4px; border-radius: 4px; font-size: 12px; }
+  .ok { color: #17713b; font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 12px; } .err { color: #b0261f; font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 12px; }
+  .ev { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 12px; color: #33464d; }
+  .done { color: var(--mut); font-size: 13px; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="module" src="/web/testclient.js"></script>
+</body>
+</html>

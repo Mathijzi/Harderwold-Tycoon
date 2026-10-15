@@ -1,0 +1,22 @@
+# Lokaal of op een server:  ADMIN_KEY=een-lange-geheime-sleutel docker compose up -d   ->   http://<host>:8090/
+# Alles wat bewaard moet blijven (database, back-ups, kaart) staat in het volume harderwold-data. Zie docs/RUNBOOK.md.
+services:
+  harderwold:
+    build: .
+    image: harderwold-tycoon:latest
+    ports:
+      - "8090:8090"
+    environment:
+      ADMIN_KEY: "${ADMIN_KEY:?Zet ADMIN_KEY (bijv. in een .env-bestand naast dit bestand)}"
+      GAME_CODE: "${GAME_CODE:-HARDER}"
+      TIME_SCALE: "1"
+      AUTO_ARRIVALS: "1"
+      DEMO_BOT: "0"
+      BACKUP_EVERY_MIN: "60"
+      BACKUP_KEEP: "48"
+      TZ: "Europe/Amsterdam"
+    volumes:
+      - harderwold-data:/app/runtime
+    restart: unless-stopped
+volumes:
+  harderwold-data:

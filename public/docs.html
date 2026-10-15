@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Harderwold Tycoon - API</title>
+<style>
+  body { margin: 0; font: 15px/1.55 Inter, "Segoe UI", system-ui, Arial, sans-serif; color: #17242a; background: #f6f7f7; }
+  main { max-width: 980px; margin: 0 auto; padding: 24px 18px 60px; }
+  h1 { font-size: 24px; } h2 { font-size: 18px; margin-top: 28px; border-bottom: 1px solid #dde3e2; padding-bottom: 4px; }
+  pre { background: #10201f; color: #d7f0ee; padding: 12px 14px; border-radius: 10px; overflow: auto; font-size: 13px; }
+  code { background: #e8eeed; padding: 1px 5px; border-radius: 4px; } pre code { background: none; padding: 0; }
+  table { border-collapse: collapse; width: 100%; font-size: 14px; } td, th { text-align: left; border-top: 1px solid #dde3e2; padding: 5px 6px; vertical-align: top; }
+  .note { background: #e3f4f5; border-left: 4px solid #009ba8; padding: 10px 14px; border-radius: 6px; }
+  table.params { border-collapse: collapse; width: 100%; margin: 8px 0 18px; font-size: 14px; } table.params th, table.params td { text-align: left; vertical-align: top; padding: 6px 8px; border-top: 1px solid #e1e6e5; } table.params th { background: #f3f5f4; }
+</style>
+</head>
+<body><main>
+<h1>Harderwold Tycoon - API (prototype fase 1-3)</h1>
+<p class="note">Basis-URL: <code id="base"></code>/api/v1 · OpenAPI: <a href="/api/v1/openapi.json">/api/v1/openapi.json</a> · Realtime: Server-Sent Events op <code>/api/v1/stream</code> (fallback polling: <code>/api/v1/events?after=cursor</code>). Spelers authenticeren met <code>Authorization: Bearer &lt;token&gt;</code>; beheer met <code>X-Admin-Key</code>. Een spelerstoken heeft nooit admin-rechten.</p>
+
+<h2>Slagboomregel</h2>
+<p>Een inrijdende auto sluit aan in de wachtrij en krijgt een <b>check-in</b>-opdracht; een vertrekkende auto krijgt bij de uitrijslagboom een <b>check-out</b>-opdracht. Alleen het geautoriseerd <b>afronden</b> van precies die opdracht maakt één eenmalig passagetoken aan (gekoppeld aan voertuig, richting, opdracht en spel). De servercontroller verbruikt het token pas als dat voertuig vooraan bij de stopstreep staat: <code>CLOSED → OPENING → OPEN → CLOSING → CLOSED</code>, en sluit pas als het voertuig de doorrijzone volledig heeft verlaten. Animaties, nabijheid, timers of "hervatten" openen nooit een slagboom. De noodbediening (<code>/admin/gates/{id}/override</code>) vereist een reden en wordt gelogd.</p>
+
+<h2>Projectie: URL-parameters</h2>
+<p class="note">Zet ze achter het adres van de projectie, gescheiden door <code>&amp;</code>. Voorbeelden: <code>/?res=4k</code> (beamer), <code>/?zoom=3&amp;focus=receptie</code> (close-up op een tweede scherm), <code>/?hour=22&amp;sound=0</code> (nachtbeeld testen zonder geluid). Andere pagina's: <code>/admin</code> (spelleider), <code>/test</code> (testinterface), <code>/editor</code> (kaarteditor), <code>/docs</code> (deze pagina).</p>
+<table class="params"><thead><tr><th>Parameter</th><th>Waarden</th><th>Standaard</th><th>Wat het doet</th></tr></thead><tbody>
+<tr><td><code>res</code></td><td>1080 · 1440 · 4k</td><td>automatisch</td><td>Interne tekenresolutie. Standaard volgt hij het scherm (een laptop tekent geen 4K). Op de beamer: <code>res=4k</code>.</td></tr>
+<tr><td><code>fps</code></td><td>5–144</td><td>60</td><td>Maximaal aantal beelden per seconde (standaard het ritme van het scherm, 60).</td></tr>
+<tr><td><code>stats</code></td><td>1</td><td>uit</td><td>Toont linksonder de gemeten fps, de traagste frame en de rekentijd. Handig om de beamer-pc te testen.</td></tr>
+<tr><td><code>hud</code></td><td>bijv. 0.8 · 1.5</td><td>1</td><td>Grootte van scorebord, klok en crisispaneel.</td></tr>
+<tr><td><code>zoom</code></td><td>2–6</td><td>1</td><td>Vaste close-up: alles wordt op die schaal getekend, met echt detail. Alleen wat in beeld is wordt opgebouwd. Handig voor een tweede scherm.</td></tr>
+<tr><td><code>focus</code></td><td>receptie · zwembad · brasserie · snackbar · fietsverhuur · tent · bowling · parkshop · &lt;huisnummer&gt; · &lt;letter&gt; · x,y</td><td>receptie</td><td>Middelpunt van de close-up (alleen met <code>zoom</code>). Een huisnummer, een voorzieningsletter uit de PDF-legenda, of wereldcoördinaten in meters.</td></tr>
+<tr><td><code>autozoom</code></td><td>0</td><td>aan</td><td>Zet het automatisch inzoomen bij crises of verhalen op dit scherm uit. Aan/uit voor iedereen: <code>/admin</code> → Instellingen → Projectie.</td></tr>
+<tr><td><code>autozoomlevel</code></td><td>1.2–3</td><td>1.8</td><td>Hoe ver het automatisch inzoomen gaat.</td></tr>
+<tr><td><code>sound</code></td><td>0</td><td>aan</td><td>Alle geluid uit (meldingen en sfeer).</td></tr>
+<tr><td><code>volume</code></td><td>0–1</td><td>0.6</td><td>Volume van meldingen en sfeergeluid.</td></tr>
+<tr><td><code>ambience</code></td><td>0</td><td>aan</td><td>Alleen het sfeergeluid (vogels, eenden, krekels, wind) uit.</td></tr>
+<tr><td><code>night</code></td><td>0</td><td>aan</td><td>Geen dag/nacht-weergave (altijd licht).</td></tr>
+<tr><td><code>weather</code></td><td>zon · halfbewolkt · bewolkt · regen · onweer · mist</td><td>weer van het spel</td><td>Toon dit weer op dit scherm (om te testen); het spel zelf verandert niet. Het echte weer zet je in <code>/admin</code> → Instellingen → Weer.</td></tr>
+<tr><td><code>hour</code></td><td>0–23.99</td><td>speltijd</td><td>Doe alsof het dit uur is voor licht en sfeer (om te testen, bijv. <code>hour=22</code>).</td></tr>
+<tr><td><code>life</code></td><td>0</td><td>aan</td><td>Geen eenden, wandelaars, honden en spelende kinderen.</td></tr>
+<tr><td><code>waves</code></td><td>0</td><td>aan</td><td>Geen bewegende golfjes op het water.</td></tr>
+<tr><td><code>groundss</code></td><td>1–3</td><td>2 (1 bij zoom)</td><td>Supersampling van de grond (wegen, markeringen, water). 1 = sneller opstarten en minder geheugen op een tragere pc.</td></tr>
+<tr><td><code>renderer</code></td><td>canvas</td><td>pixi</td><td>Terugvaloptie zonder WebGL (Canvas 2D). Golfjes en GPU-zoom werken dan beperkt.</td></tr>
+<tr><td><code>debug</code></td><td>&lt;admin-sleutel&gt;</td><td>uit</td><td>Toont wegennet, wachtredenen en conflictzones (voor ontwikkelaars).</td></tr>
+</tbody></table>
+<h2>Snelstart met curl</h2>
+<pre><code>BASE=http://localhost:8090/api/v1
+# 1. aanmelden
+TOKEN=$(curl -s -X POST $BASE/sessions/join -H 'content-type: application/json' \
+  -d '{"gameCode":"HARDER","displayName":"Mathijs"}' | sed -E 's/.*"token":"([^"]+)".*/\1/')
+
+# 2. aankomst laten plaatsvinden (spelleider)
+curl -s -X POST $BASE/admin/arrivals -H 'X-Admin-Key: gm-harderwold' -H 'content-type: application/json' -d '{"count":1}'
+
+# 3. wachtende check-in opdrachten
+curl -s "$BASE/tasks?state=offered" -H "Authorization: Bearer $TOKEN"
+
+# 4. claimen en afronden (idempotencyKey verplicht; herhalen met dezelfde sleutel is veilig)
+TASK=T-checkin-car-010
+curl -s -X POST $BASE/tasks/$TASK/claim    -H "Authorization: Bearer $TOKEN" -H 'content-type: application/json' -d '{"idempotencyKey":"c-1"}'
+curl -s -X POST $BASE/tasks/$TASK/complete -H "Authorization: Bearer $TOKEN" -H 'content-type: application/json' -d '{"idempotencyKey":"d-1"}'
+
+# Onderhouds- en natuurmeldingen (TD): na het claimen rijdt een golfkar naar de bungalow.
+# Afronden geeft 409 technician_not_on_site tot de monteur binnen is; zie het veld technician in GET /tasks/$TASK.
+
+# 5. realtime meekijken
+curl -N "$BASE/stream"</code></pre>
+
+<h2>Endpoints</h2>
+<table id="eps"><tr><th>Methode</th><th>Pad</th><th>Omschrijving</th></tr></table>
+
+<h2>Foutcodes</h2>
+<table>
+<tr><td>401</td><td>geen of ongeldige sessie / admin-sleutel ontbreekt</td></tr>
+<tr><td>403</td><td>verkeerde spelcode, ongeldige admin-sleutel, of afronden van andermans opdracht</td></tr>
+<tr><td>404</td><td>onbekende opdracht/locatie</td></tr>
+<tr><td>409</td><td><code>already_claimed</code> (iemand was je voor), <code>claim_limit</code> (max. 3 actief), <code>not_claimed</code>, <code>deadline_passed</code>, <code>name_taken</code></td></tr>
+<tr><td>422</td><td>ongeldige invoer, ontbrekende <code>idempotencyKey</code>, sleutel hergebruikt voor andere opdracht</td></tr>
+<tr><td>429</td><td>rate limit (20 req/s per client, burst 40)</td></tr>
+</table>
+
+<h2>Realtime gebeurtenissen</h2>
+<p><code>task.created</code>, <code>task.claimed</code>, <code>task.completed</code>, <code>task.expired</code>, <code>task.reoffered</code>, <code>task.cancelled</code>, <code>leaderboard.updated</code>, <code>vehicle.buffered</code>, <code>vehicle.arrived</code>, <code>vehicle.queued</code>, <code>vehicle.passed_gate</code>, <code>vehicle.parked</code>, <code>vehicle.departing</code>, <code>vehicle.exited</code>, <code>gate.token_issued</code>, <code>gate.pass_authorized</code>, <code>gate.opening</code>, <code>gate.opened</code>, <code>gate.closing</code>, <code>gate.closed</code>, <code>gate.override</code>, <code>queue.updated</code>, <code>booking.updated</code>, <code>house.needs_cleaning</code>, <code>house.cleaned</code>, <code>service.requested</code>, <code>service.dispatched</code>, <code>service.working</code> (monteur ter plaatse), <code>service.returning</code>, <code>state</code> (1 Hz samenvatting) en met <code>?frames=1</code> ook <code>frame</code> (10 Hz verkeersposities voor de projectie). Elk bericht heeft een oplopend <code>id</code>; herverbinden met <code>Last-Event-ID</code> speelt gemiste gebeurtenissen af.</p>
+</main>
+<script>
+document.getElementById('base').textContent = location.origin;
+fetch('/api/v1/openapi.json').then(r => r.json()).then(spec => {
+  const t = document.getElementById('eps');
+  for (const [p, ops] of Object.entries(spec.paths)) for (const [m, op] of Object.entries(ops)) {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td><b>${m.toUpperCase()}</b></td><td><code>/api/v1${p}</code>${op.security ? (op.security[0].adminKey ? ' <small>(admin)</small>' : ' <small>(speler)</small>') : ''}</td><td>${op.summary}</td>`;
+    t.appendChild(tr);
+  }
+});
+</script>
+</body></html>
