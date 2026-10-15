@@ -1,8 +1,9 @@
-// Editable branding for this fan/game prototype: a neutral, self-made style (no official logo or house style).
-// It does not claim official affiliation with Harderwold Villa Resort or Landal. Override via assets/branding.json.
+// Editable branding: Harderwold house colours (navy + orange accent, supplied by the client). The neutral emblem
+// stays until the client's logo is cleared for use in the game. Override via assets/branding.json.
 export const BRAND = {
-  teal: '#1f6f78',
-  tealDark: '#154f56',
+  teal: '#1f2a38', // primary colour (navy, Harderwold house style); key name kept from the base engine
+  tealDark: '#151d27',
+  accent: '#cc7400',
   white: '#ffffff',
   wordmark: 'Harderwold',
   parkName: 'Harderwold',

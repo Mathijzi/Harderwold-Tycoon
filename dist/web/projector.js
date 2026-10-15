@@ -43147,8 +43147,10 @@ function hull(pts) {
 
 // src/web/projector/brand.ts
 var BRAND = {
-  teal: "#1f6f78",
-  tealDark: "#154f56",
+  teal: "#1f2a38",
+  // primary colour (navy, Harderwold house style); key name kept from the base engine
+  tealDark: "#151d27",
+  accent: "#cc7400",
   white: "#ffffff",
   wordmark: "Harderwold",
   parkName: "Harderwold"

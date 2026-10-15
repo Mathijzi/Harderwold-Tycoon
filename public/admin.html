@@ -6,21 +6,21 @@
 <title>Harderwold Tycoon - Game Master</title>
 <style>
   /* colours as tokens: light by default, dark when the system asks for it or the user picks it (data-theme) */
-  :root { color-scheme: light; --teal: #009ba8; --ink: #17242a; --mut: #687880; --bg: #f3f5f4; --card: #fff; --line: #e1e6e5;
-    --field: #fff; --field-line: #c9d3d2; --btn: #fff; --sel: #e1f4f5; --soft: #eef2f1; --bar: #e8eceb; --ev: #33464d;
+  :root { color-scheme: light; --teal: #a85e00; --ink: #1f2a38; --mut: #687880; --bg: #f3f5f4; --card: #fff; --line: #e1e6e5;
+    --field: #fff; --field-line: #c9d3d2; --btn: #fff; --sel: #fbecd9; --soft: #eef2f1; --bar: #e8eceb; --ev: #33464d;
     --ok: #17713b; --warn: #b25a00; --bad: #b0261f; --bad-line: #d9423a; --on-teal: #fff;
     --ph: #eee; --ph-closed-bg: #fde2e0; --ph-closed: #a3221a; --ph-open-bg: #dcf5e5; --ph-move-bg: #fff1d6; --ph-move: #8a5a00;
-    --tag-bg: #fff1e3; --tag: #a85a10; --tag-in-bg: #e1f4f5; --tag-in: #00727c; --tag-out-bg: #e7eafc; --tag-out: #3446a8; }
-  :root[data-theme="dark"] { color-scheme: dark; --teal: #2bc0c8; --ink: #e6eef0; --mut: #93a4ab; --bg: #0f1719; --card: #172226; --line: #26353a;
-    --field: #0f1a1d; --field-line: #34474d; --btn: #1d2a2e; --sel: #12393d; --soft: #22323a; --bar: #26353a; --ev: #b7c7cc;
-    --ok: #5cd08a; --warn: #f0a24a; --bad: #ff7a70; --bad-line: #e0574e; --on-teal: #06262a;
+    --tag-bg: #fff1e3; --tag: #a85a10; --tag-in-bg: #e3e8ef; --tag-in: #1f2a38; --tag-out-bg: #e7eafc; --tag-out: #3446a8; }
+  :root[data-theme="dark"] { color-scheme: dark; --teal: #f0a040; --ink: #e6eef0; --mut: #93a4ab; --bg: #0f1719; --card: #172226; --line: #26353a;
+    --field: #0f1a1d; --field-line: #34474d; --btn: #1d2a2e; --sel: #3a2a14; --soft: #22323a; --bar: #26353a; --ev: #b7c7cc;
+    --ok: #5cd08a; --warn: #f0a24a; --bad: #ff7a70; --bad-line: #e0574e; --on-teal: #1f2a38;
     --ph: #26353a; --ph-closed-bg: #4a1c19; --ph-closed: #ffb3ad; --ph-open-bg: #133a24; --ph-move-bg: #3d2f12; --ph-move: #ffd38a;
-    --tag-bg: #3d2a14; --tag: #ffc37a; --tag-in-bg: #12393d; --tag-in: #7fe0e6; --tag-out-bg: #232a52; --tag-out: #aab6ff; }
-  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { color-scheme: dark; --teal: #2bc0c8; --ink: #e6eef0; --mut: #93a4ab; --bg: #0f1719; --card: #172226; --line: #26353a;
-    --field: #0f1a1d; --field-line: #34474d; --btn: #1d2a2e; --sel: #12393d; --soft: #22323a; --bar: #26353a; --ev: #b7c7cc;
-    --ok: #5cd08a; --warn: #f0a24a; --bad: #ff7a70; --bad-line: #e0574e; --on-teal: #06262a;
+    --tag-bg: #3d2a14; --tag: #ffc37a; --tag-in-bg: #24344a; --tag-in: #c9d6e6; --tag-out-bg: #232a52; --tag-out: #aab6ff; }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { color-scheme: dark; --teal: #f0a040; --ink: #e6eef0; --mut: #93a4ab; --bg: #0f1719; --card: #172226; --line: #26353a;
+    --field: #0f1a1d; --field-line: #34474d; --btn: #1d2a2e; --sel: #3a2a14; --soft: #22323a; --bar: #26353a; --ev: #b7c7cc;
+    --ok: #5cd08a; --warn: #f0a24a; --bad: #ff7a70; --bad-line: #e0574e; --on-teal: #1f2a38;
     --ph: #26353a; --ph-closed-bg: #4a1c19; --ph-closed: #ffb3ad; --ph-open-bg: #133a24; --ph-move-bg: #3d2f12; --ph-move: #ffd38a;
-    --tag-bg: #3d2a14; --tag: #ffc37a; --tag-in-bg: #12393d; --tag-in: #7fe0e6; --tag-out-bg: #232a52; --tag-out: #aab6ff; } }
+    --tag-bg: #3d2a14; --tag: #ffc37a; --tag-in-bg: #24344a; --tag-in: #c9d6e6; --tag-out-bg: #232a52; --tag-out: #aab6ff; } }
   * { box-sizing: border-box; }
   body { margin: 0; font: 14px/1.45 Inter, "Segoe UI", system-ui, -apple-system, Roboto, Arial, sans-serif; color: var(--ink); background: var(--bg); }
   .wrap { max-width: 1400px; margin: 0 auto; padding: 16px; }
