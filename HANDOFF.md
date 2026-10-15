@@ -229,3 +229,12 @@ Alles hieronder komt mee en werkt na de kopie, maar is nog op Aelderholt ingeric
 4. Telt de golfbaan mee als speelgebied (opdrachten, golfkarren), of is het decor?
 5. Moet het noordelijke cluster 600–655 (grijs, deels geschakeld) als bestaand worden gezien of als in aanbouw?
 6. Huisstijl: welke kleuren en welk woordmerk mogen in beeld (geen officieel logo zonder toestemming)?
+
+## 10. Antwoorden van de opdrachtgever (15 oktober 2026)
+
+1. **Toegang:** klopt. Eén toegang met één slagboompunt (in en uit) op de rode stippellijn ten oosten van het hart.
+2. **Gasten:** geen BN'ers. Gewone Nederlanders, aangevuld met artiesten die op schrijverskamp zijn en rijke gasten (het zijn villa's).
+3. **Varende boten** in de grachten: ja, gewenst (fase 4).
+4. **Golfbaan** als speelgebied of decor: nog open (het antwoord "deels geschakeld" hoort bij vraag 5).
+5. **Cluster 600–655:** bestaand, deels geschakelde villa's (paren met een schuine streep).
+6. **Huisstijl:** volgens de website en het logo (alleen lokaal in `references/huisstijl/`, niet in git): donkerblauw `#1f2a38`, oranje accent `#cc7400`, woordmerk "Harderwold". Of het echte logo in beeld mag, is nog open.
