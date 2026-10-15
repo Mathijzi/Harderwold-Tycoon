@@ -1,4 +1,4 @@
-// Central facility complex built from editable "massing" data (data/map/massing_central.json):
+// Facility buildings built from editable "massing" data (park.json "massing"):
 // one rotated rectangular block per wing (derived from the walls in AHT_Plat.pdf), each with its own
 // pitched roof (standing-seam metal) or a green flat roof, and a facade style per function.
 // Walls that touch a neighbouring wing are suppressed (or only drawn above the neighbour's eaves),

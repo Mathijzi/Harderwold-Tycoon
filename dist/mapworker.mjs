@@ -1120,6 +1120,9 @@ function buildNetwork(net, sector) {
   const viewW = (sector.viewPts[2] - sector.viewPts[0]) * k, viewH = (sector.viewPts[3] - sector.viewPts[1]) * k;
   return { edges, nodes, zones, zonesByEdge, stalls, stallsByHouse, gates, portals, roads, islands, houses, toWorld, bounds: { w: viewW, h: viewH }, validation };
 }
+function visitorPortal(net) {
+  return [...net.portals.values()].filter((p) => p.kind === "public").map((p) => p.id).sort()[0] ?? "";
+}
 function findRoute(net, fromEdge, toEdge, kind, opts = {}) {
   const gateEdges = new Set([...net.gates.values()].filter((g) => !g.staff).map((g) => g.edge));
   const allowed = (e) => kind === "visitor" ? e.visitor : e.service;
@@ -1140,7 +1143,7 @@ function findRoute(net, fromEdge, toEdge, kind, opts = {}) {
       if (n.kind === "driveway" && nid !== toEdge) continue;
       if (n.kind === "reverse") continue;
       if (n.uturn && !opts.uturn) continue;
-      const nd = d + e.line.length + (kind === "service" && gateEdges.has(nid) ? 400 : 0);
+      const nd = d + e.line.length + (kind === "service" && gateEdges.has(nid) ? 2e4 : 0);
       if (nd < (distM.get(nid) ?? Infinity)) {
         distM.set(nid, nd);
         prev.set(nid, id);
@@ -1276,7 +1279,6 @@ function checkBundle(b) {
 }
 
 // src/sim/diagnose.ts
-var VISITOR_PORTAL = "P_W";
 function toPtFn(b) {
   const k = b.park.metersPerPt, o = b.park.originPt;
   return (v) => [+(v.x / k + o[0]).toFixed(2), +(v.y / k + o[1]).toFixed(2)];
@@ -1287,7 +1289,7 @@ function buildFromBundle(b) {
 var routeLen = (net, r) => r.reduce((n, id) => n + net.edges.get(id).line.length, 0);
 function houseRoutes(net, house) {
   const st = net.stallsByHouse.get(house);
-  const portal = net.portals.get(VISITOR_PORTAL);
+  const portal = net.portals.get(visitorPortal(net));
   if (!st || !portal?.spawnEdge || !portal.despawnEdge) return null;
   const pick = (dir, from, to) => {
     let best = null;

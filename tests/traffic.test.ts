@@ -26,10 +26,10 @@ function harness(seed = 3) {
   return { park, tokens, queued, events, authorize, run, veh, consumedCount: () => consumed };
 }
 const lead = (h: ReturnType<typeof harness>, v: Vehicle, gid = 'gate-in') => h.park.traffic.pathPos(v) + v.spec.len / 2 - v.cum[v.route.indexOf(net.gates.get(gid)!.edge)];
-// the park has two accesses: which bungalows use which barrier (shortest legal route)
+// Harderwold has one access (barrier point by the hart): every villa uses gate-in / gate-out
 const probe = new ParkSim(net, { consumeToken: () => null, onEvent: () => {}, onQueued: () => {} }, 1);
 const via = (gin: string, gout?: string) => net.houses.map((x) => x.number).filter((n) => net.stallsByHouse.has(n) && probe.gatesFor(n).in === gin && (!gout || probe.gatesFor(n).out === gout));
-const WEST = via('gate-in', 'gate-out'), EAST = via('gate-in-oost', 'gate-out-oost');
+const WEST = via('gate-in', 'gate-out');
 const arriveAt = (h: ReturnType<typeof harness>, list: number[]) => {
   const free = new Set(h.park.vacantHouses());
   const n = list.find((x) => free.has(x));
@@ -75,7 +75,9 @@ test('3. a departing car queues on the outbound lane; its check-out alone opens 
   h.park.seedOccupied(40);
   const occ = [...h.park.bookings.values()].find((x) => x.status === 'in_house' && probe.gatesFor(x.houseNumber).out === 'gate-out')!;
   const b = h.park.depart({ bookingId: occ.id })!;
-  h.run(240);
+  // the park is large (up to ~1.5 km to the barrier): wait until the car stands in the outbound queue
+  for (let t = 0; t < 900 && !h.queued.length; t += 10) h.run(10);
+  h.run(20);
   const v = h.veh(b.vehicleId)!;
   assert.equal(h.queued.length, 1);
   assert.equal(h.queued[0].gate, 'gate-out');
@@ -200,7 +202,8 @@ test('turn signals only for real turns: never in the bend towards the barrier, a
     for (const v of h.park.traffic.vehicles) {
       if (v.state !== 'driving' || v.v < 0.2) continue;
       const e = net.edges.get(v.route[v.ri])!;
-      if (e.id === g.edge && v.s < g.stopS + 25) { bendSamples++; if (v.signal) bendSignals++; }
+      // approach and bend to the barrier; the last 35 m before the gate junction may announce the turn after it
+      if (e.id === g.edge && v.s < Math.min(g.stopS + 25, e.line.length - 35)) { bendSamples++; if (v.signal) bendSignals++; }
       if (e.kind === 'driveway') { drvSamples++; if (v.signal !== 0) drvSignals++; }
     }
   });
@@ -209,60 +212,44 @@ test('turn signals only for real turns: never in the bend towards the barrier, a
   assert.ok(drvSamples > 20 && drvSignals === drvSamples, 'indicator on when turning into the stall');
 });
 
-// ---------------------------------------------------------------- whole park: two accesses, one-way roads, service passes
-test('whole park: every bungalow has its own stall and a legal route in and out through exactly one barrier each way', () => {
-  assert.equal(net.houses.length, 341);
+// ---------------------------------------------------------------- whole park: one access, dead ends, service passes
+test('whole park: every villa has its own stall and a legal route in and out through exactly one barrier each way', () => {
+  assert.ok(net.houses.length >= 330, `all villas of the plan (${net.houses.length})`);
   const inGates = new Set([...net.gates.values()].filter((g) => g.direction === 'inbound').map((g) => g.edge));
   const outGates = new Set([...net.gates.values()].filter((g) => g.direction === 'outbound').map((g) => g.edge));
-  const W = net.portals.get('P_W')!;
+  const W = net.portals.get(probe.visitorPortal)!;
   const without = net.houses.filter((x) => !net.stallsByHouse.has(x.number)).map((x) => x.number);
-  assert.ok(without.length <= 5, `at most a handful of bungalows without a stall (map editor): ${without.join(', ')}`);
+  assert.ok(without.length <= 5, `at most a handful of villas without a stall (map editor): ${without.join(', ')}`);
   for (const hs of net.houses) {
     const st = net.stallsByHouse.get(hs.number);
     if (!st) continue;
     const g = probe.gatesFor(hs.number);
-    assert.ok(g.in && g.out, `gates for ${hs.number}`);
+    assert.ok(g.in === 'gate-in' && g.out === 'gate-out', `gates for ${hs.number}: ${g.in}/${g.out}`);
     const r1 = probe.traffic.planRoute(W.spawnEdge!, st!.inEdge, { type: 'arrive', bookingId: 'x', stallId: st!.id, gateId: g.in }, { id: 'x', kind: 'visitor', model: 'hatch', len: 4.2, wid: 1.8, color: '#fff', plate: '' } as any)!;
-    const r2 = probe.traffic.planRoute(st!.outEdge, W.despawnEdge!, { type: 'depart', bookingId: 'x', stallId: st!.id, gateId: g.out, portal: 'P_W' }, { id: 'x', kind: 'visitor', model: 'hatch', len: 4.2, wid: 1.8, color: '#fff', plate: '' } as any)!;
+    const r2 = probe.traffic.planRoute(st!.outEdge, W.despawnEdge!, { type: 'depart', bookingId: 'x', stallId: st!.id, gateId: g.out, portal: probe.visitorPortal }, { id: 'x', kind: 'visitor', model: 'hatch', len: 4.2, wid: 1.8, color: '#fff', plate: '' } as any)!;
     assert.ok(r1 && r2, `routes for ${hs.number}`);
     assert.equal(r1.filter((e) => inGates.has(e)).length, 1, `${hs.number}: one inbound barrier`);
     assert.equal(r1.filter((e) => outGates.has(e)).length, 0);
     assert.equal(r2.filter((e) => outGates.has(e)).length, 1, `${hs.number}: one outbound barrier`);
     assert.equal(r2.filter((e) => inGates.has(e)).length, 0);
   }
-  assert.ok(WEST.length > 50 && EAST.length > 50, `both accesses in use (west ${WEST.length}, east ${EAST.length})`);
+  assert.equal(WEST.length, net.houses.filter((x) => net.stallsByHouse.has(x.number)).length, 'all villas use the one access');
 });
 
-test('one-way roads (PDF arrows) have a single lane and nobody drives them against the arrow', () => {
+test('every lane continues: dead-end villa streets end in a turning loop, nobody needs to reverse onto a street', () => {
+  const stuck = net.validation.filter((v) => v.msg.includes('geen vervolg'));
+  assert.deepEqual(stuck.map((v) => v.msg), []);
   const { net: json } = loadMapJson();
-  const oneway = json.roads.filter((r) => r.oneway);
-  assert.ok(oneway.length >= 5, 'one-way chain along the south of the park');
-  for (const r of oneway) {
-    assert.ok(net.edges.has(`${r.id}:${r.oneway}`) || [...net.edges.keys()].some((k) => k.startsWith(`${r.id}:${r.oneway}~`)), `${r.id} has its lane`);
-    const other = r.oneway === 'f' ? 'b' : 'f';
-    assert.ok(![...net.edges.keys()].some((k) => k === `${r.id}:${other}` || k.startsWith(`${r.id}:${other}~`)), `${r.id} has no opposite lane`);
-  }
+  const dead = Object.entries(json.nodes).filter(([, n]) => n.kind === 'deadend');
+  assert.ok(dead.length >= 10, `turning loops at the end of the villa streets (${dead.length})`);
+  for (const [id] of dead) assert.ok([...net.edges.values()].some((e) => e.kind === 'loop' && e.from === id), `turning loop at ${id}`);
 });
 
-test('East barrier: an east bungalow\'s car stops at gate-in-oost, passes only with its own check-in, queue never exceeds the room on the lane', () => {
-  const h = harness(13);
-  const g = net.gates.get('gate-in-oost')!;
-  const bs = [arriveAt(h, EAST), arriveAt(h, EAST), arriveAt(h, EAST)];
-  let maxQueue = 0;
-  h.run(240, () => { maxQueue = Math.max(maxQueue, h.park.traffic.gates.get(g.id)!.queue.length); });
-  assert.ok(maxQueue <= g.queueSlots, `queue ${maxQueue} <= ${g.queueSlots} slot(s) that fit between the junction and the barrier`);
-  assert.ok(h.park.traffic.buffer.length >= bs.length - g.queueSlots, 'the rest waits off-screen');
-  const head = h.park.traffic.gates.get(g.id)!.queue[0];
-  assert.ok(head, 'a car waits at the East barrier');
-  assert.equal(h.park.traffic.gates.get(g.id)!.phase, 'CLOSED');
-  h.authorize(head, 'gate-in'); // a West token must not open the East barrier
-  h.run(60);
-  assert.equal(h.park.traffic.gates.get(g.id)!.phase, 'CLOSED');
-  h.authorize(head, g.id);
-  h.run(400, () => { for (const q of h.queued) if (q.b.vehicleId !== head) h.authorize(q.b.vehicleId, q.gate); });
-  assert.ok(bs.every((b) => ['parked', 'in_house'].includes(h.park.bookings.get(b.id)!.status)), 'all three reached their bungalows');
-  const s = h.park.traffic.stats;
-  assert.equal(s.illegalGateCrossings, 0); assert.equal(s.collisions, 0); assert.equal(s.publicRoadStopSeconds, 0);
+test('the inbound queue fits on the entrance road and never reaches back to the public road', () => {
+  const g = net.gates.get('gate-in')!;
+  assert.ok(g.queueSlots >= 5, `room for ${g.queueSlots} cars`);
+  assert.ok(g.slotS[g.slotS.length - 1] > g.slotSpacing, 'the last slot still lies on the entrance road');
+  assert.equal(net.edges.get(g.edge)!.cls, 'arrival');
 });
 
 test('service vehicles bypass both visitor barriers on the service roads (never queueing between check-ins) and open the staff barrier only with a staff pass', () => {
@@ -284,17 +271,17 @@ test('service vehicles bypass both visitor barriers on the service roads (never 
     for (const v of h.park.traffic.vehicles.values()) {
       if (!/^(svc|tdkar)/.test(v.spec.id)) continue;
       const road = String(v.route[v.ri] ?? '').split(':')[0];
-      if (road.startsWith('dienst')) lanes.add(road);
+      if (road.startsWith('dienst') || road === 'td-pad') lanes.add(road);
       assert.ok(![...net.gates.values()].some((g) => !g.staff && g.edge.split(':')[0] === road), `${v.spec.id} drives on visitor barrier road ${road}`);
     }
     // visitors never come near the staff road
-    for (const v of h.park.traffic.vehicles.values()) if (v.spec.kind === 'visitor') assert.ok(!String(v.route[v.ri] ?? '').startsWith('dienstweg-oost'), `${v.spec.id} on the staff road`);
+    for (const v of h.park.traffic.vehicles.values()) if (v.spec.kind === 'visitor') assert.ok(!/^(dienstweg|td-pad)/.test(String(v.route[v.ri] ?? '')), `${v.spec.id} on a service road`);
   }
   const staffGates = new Set([...net.gates.values()].filter((g) => g.staff).map((g) => g.id));
   assert.equal(staffGates.size, 2, 'staff barrier on the staff road (one arm per lane)');
   assert.ok(passes.length > 0, 'service vehicles crossed the staff barrier');
   assert.deepEqual(passes.filter((p) => !staffGates.has(p.split('@')[1])), [], 'no service vehicle needed a pass through a visitor barrier');
-  assert.ok(lanes.has('dienstweg-oost') && lanes.has('dienstpad-west'), `service lanes used: ${[...lanes].join(', ')}`);
+  assert.ok(lanes.has('dienstweg-zuid') && lanes.has('dienstweg-loods'), `service lanes used: ${[...lanes].join(', ')}`);
   assert.equal(h.park.traffic.stats.illegalGateCrossings, 0);
   assert.equal(h.park.traffic.stats.collisions, 0);
 });
@@ -332,20 +319,4 @@ test('stalls: turning in from and reversing out to the opposite lane (no detour 
   assert.ok(usedIn > 0 && usedOut > 0, `cross movements used: in ${usedIn}, out ${usedOut}`);
   assert.equal(park.traffic.stats.collisions, 0);
   assert.equal(park.traffic.stats.wrongWay, 0);
-});
-
-test('regression: wait-for cycles resolve (J_TD dienstpad West: two service vehicles; laan-91: car reversing out vs. cars parking) - snapshot of a real game', async () => {
-  const { readFileSync } = await import('node:fs');
-  const h = harness(42);
-  h.park.restore(readFileSync(new URL('./fixtures/deadlock-jtd.park.json', import.meta.url), 'utf8'));
-  const ids = ['svc-schoonmaak-722', 'svc-onderhoud-728', 'car-126', 'car-084', 'car-702', 'car-730'];
-  const start = new Map(ids.map((id) => { const v = h.veh(id)!; return [id, h.park.traffic.pathPos(v)]; }));
-  // the outbound queue still opens only with tokens: authorize whoever stands at a barrier
-  h.run(150, () => { for (const [gid, gs] of h.park.traffic.gates) if (gs.queue[0] && !h.tokens.get(`${gs.queue[0]}|${gid}`)) h.authorize(gs.queue[0], gid); });
-  for (const id of ids) {
-    const v = h.veh(id);
-    assert.ok(!v || v.state !== 'driving' || h.park.traffic.pathPos(v) - start.get(id)! > 10, `${id} drives on (was stuck)`);
-  }
-  assert.equal(h.park.traffic.stats.collisions, 0);
-  assert.equal(h.park.traffic.stats.illegalGateCrossings, 0);
 });

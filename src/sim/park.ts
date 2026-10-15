@@ -1,6 +1,6 @@
 // Park layer on top of the traffic sim: bookings/households, guests on foot, service vehicles.
 // It never opens a gate itself: passage tokens come exclusively from the authorizer (task completion).
-import { Network, findRoute } from './network.ts';
+import { Network, findRoute, visitorPortal } from './network.ts';
 import { TrafficSim, TrafficHooks, Vehicle, VehicleSpec, Pedestrian, Mission } from './traffic.ts';
 import { Vec, add, mul, sub, norm, rng, Rng, dist } from '../shared/geom.ts';
 import { Guest, Household, makeHousehold } from '../shared/guestlib.ts';
@@ -26,8 +26,6 @@ export interface ParkHooks extends Pick<TrafficHooks, 'consumeToken' | 'onPassag
   onAtGate?(b: Booking, gateId: string, direction: 'inbound' | 'outbound'): void;
 }
 
-/** visitors enter and leave the park at the Ingang (public portal) */
-const VISITOR_PORTAL = 'P_W';
 const CAR_COLORS = ['#e9ecef', '#1f2326', '#9aa3ab', '#2f4f7f', '#8e1d24', '#cfd4d8', '#3c4b3a', '#5a6470', '#f2f2ee', '#273441', '#6b2f2a', '#b7b9b2'];
 
 export class ParkSim {
@@ -43,6 +41,8 @@ export class ParkSim {
   private gateCache = new Map<number, { in: string; out: string }>();
   /** service entrances (emergency exits used by service vehicles) */
   readonly servicePortals: string[];
+  /** visitors enter and leave the park at the public entrance */
+  readonly visitorPortal: string;
   /** turning circles a patrolling maintenance van can visit */
   private patrolLoops: string[];
 
@@ -53,6 +53,7 @@ export class ParkSim {
     this.net = net;
     this.hooks = hooks;
     this.rand = rng(seed * 7919 + 13);
+    this.visitorPortal = visitorPortal(net);
     this.servicePortals = [...net.portals.values()].filter((p) => p.kind === 'service' && p.spawnEdge && p.despawnEdge).map((p) => p.id);
     this.patrolLoops = [...net.edges.values()].filter((e) => e.kind === 'loop' && e.service && e.cls === 'park').map((e) => e.id).sort();
     for (const st of net.stalls.values()) if (st.houseNumber > 0) this.houses.set(st.houseNumber, { state: 'vacant' });
@@ -129,7 +130,7 @@ export class ParkSim {
     this.bookings.set(id, b);
     this.houses.set(house, { state: 'reserved', bookingId: id });
     this.setStatus(b, 'arriving');
-    this.traffic.enqueueArrival(this.makeCar(vid), { type: 'arrive', bookingId: id, stallId: st.id, gateId: this.gatesFor(house).in }, VISITOR_PORTAL, this.t + (opts.delaySec ?? 0));
+    this.traffic.enqueueArrival(this.makeCar(vid), { type: 'arrive', bookingId: id, stallId: st.id, gateId: this.gatesFor(house).in }, this.visitorPortal, this.t + (opts.delaySec ?? 0));
     return b;
   }
 
@@ -158,7 +159,7 @@ export class ParkSim {
     this.setStatus(b, 'departing');
     const house = this.net.houses.find((h) => h.number === b.houseNumber)!;
     veh.boarding = b.guests.length;
-    this.traffic.requestDeparture(veh.spec.id, { type: 'depart', bookingId: b.id, stallId: b.stallId, gateId: this.gatesFor(b.houseNumber).out, portal: VISITOR_PORTAL });
+    this.traffic.requestDeparture(veh.spec.id, { type: 'depart', bookingId: b.id, stallId: b.stallId, gateId: this.gatesFor(b.houseNumber).out, portal: this.visitorPortal });
     b.guests.forEach((g, i) => {
       const path = this.walkPath(house.door, veh, i);
       this.traffic.spawnPedestrian({ name: g.name, color: g.color, path, purpose: 'to_car', bookingId: b.id, vehicleId: veh.spec.id, speed: 1.15 + i * 0.07 });
@@ -426,7 +427,7 @@ export class ParkSim {
     if (hit) return hit;
     const st = this.net.stallsByHouse.get(house);
     if (!st) return { in: '', out: '' };
-    const portal = this.net.portals.get(VISITOR_PORTAL)!;
+    const portal = this.net.portals.get(this.visitorPortal)!;
     const pick = (dir: 'inbound' | 'outbound', from: string, to: string) => {
       let best = { id: '', len: Infinity };
       for (const g of this.net.gates.values()) {

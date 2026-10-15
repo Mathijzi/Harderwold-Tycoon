@@ -1,5 +1,6 @@
 // Developer test client: acts like the future mobile app (player API) + a few Game Master controls.
 // Every gate opening you see on the projector is the result of a task completion made here via the API.
+import { houseLabel } from '../../shared/house.ts';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 
@@ -145,7 +146,7 @@ function App() {
         <div className="meta">
           {t.gateId && <span>slagboom <code>{t.gateId}</code> · voertuig <code>{t.vehicleId}</code>{t.queuePosition ? ` · positie ${t.queuePosition} in rij` : ''}</span>}
           <span>status <b>{t.state}</b>{t.assignedPlayerName ? ` door ${t.assignedPlayerName}` : ''}{left !== null ? ` · deadline ${Math.floor(left / 60)}:${String(left % 60).padStart(2, '0')}` : ''}{t.attempt > 1 ? ` · poging ${t.attempt}` : ''}</span>
-          {t.technician && <span className={t.technician.onSite ? 'tdok' : 'warn'}>{t.technician.onSite ? `Monteur is ter plaatse in bungalow ${t.technician.houseNumber}: je kunt afronden` : `Monteur ${TECH_PHASE[t.technician.phase] ?? t.technician.phase}${t.technician.vehicleId ? ` (${t.technician.vehicleId})` : ''}: afronden kan pas als hij er is`}</span>}
+          {t.technician && <span className={t.technician.onSite ? 'tdok' : 'warn'}>{t.technician.onSite ? `Monteur is ter plaatse in bungalow ${houseLabel(t.technician.houseNumber)}: je kunt afronden` : `Monteur ${TECH_PHASE[t.technician.phase] ?? t.technician.phase}${t.technician.vehicleId ? ` (${t.technician.vehicleId})` : ''}: afronden kan pas als hij er is`}</span>}
         </div>
         <div className="btns">
           {t.state === 'offered' && <button onClick={() => act(t, 'claim')} disabled={!session}>Claimen</button>}

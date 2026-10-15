@@ -1,6 +1,9 @@
 // Bungalow dimensions shared by the simulation (clearance from roads, parking and other houses) and the projector art.
 import { Vec, OBB } from './geom.ts';
 
+/** Display label of a house number: the A-variants of the plan (217ᴬ, 312ᴬ ...) are stored as 1000 + number. */
+export function houseLabel(n: number): string { return n >= 1000 ? `${n - 1000}A` : String(n); }
+
 export interface HouseSize { W: number; D: number; annex: boolean; cap: number; scale: number }
 /** Legend type -> body width W (across the front) and depth D (front to back), in metres (before scaling).
  *  `pdfSideM` = side of the house square in the PDF: the whole house incl. annex and patio is scaled to fit within

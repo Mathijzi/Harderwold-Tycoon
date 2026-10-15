@@ -109,7 +109,7 @@ De naam van het volume vind je met `docker volume ls`.
 | `stats` | 1 | uit | Toont linksonder de gemeten fps, de traagste frame en de rekentijd. Handig om de beamer-pc te testen. |
 | `hud` | bijv. 0.8 · 1.5 | 1 | Grootte van scorebord, klok en crisispaneel. |
 | `zoom` | 2–6 | 1 | Vaste close-up: alles wordt op die schaal getekend, met echt detail. Alleen wat in beeld is wordt opgebouwd. Handig voor een tweede scherm. |
-| `focus` | receptie · zwembad · brasserie · snackbar · fietsverhuur · tent · bowling · parkshop · <huisnummer> · <letter> · x,y | receptie | Middelpunt van de close-up (alleen met `zoom`). Een huisnummer, een voorzieningsletter uit de PDF-legenda, of wereldcoördinaten in meters. |
+| `focus` | receptie · brasserie · slagboom · appartementen · golf · werf · loods · <huisnummer> · <letter> · x,y | receptie | Middelpunt van de close-up (alleen met `zoom`). Een huisnummer, een voorzieningsletter uit de PDF-legenda, of wereldcoördinaten in meters. |
 | `autozoom` | 0 | aan | Zet het automatisch inzoomen bij crises of verhalen op dit scherm uit. Aan/uit voor iedereen: `/admin` → Instellingen → Projectie. |
 | `autozoomlevel` | 1.2–3 | 1.8 | Hoe ver het automatisch inzoomen gaat. |
 | `sound` | 0 | aan | Alle geluid uit (meldingen en sfeer). |

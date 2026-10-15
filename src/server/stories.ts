@@ -2,6 +2,7 @@
 // A storyline belongs to one household in one bungalow. Each chapter is an ordinary claimable incident task
 // (story-only template, tasks.parent_id = story id); completing it schedules the next chapter, an unclaimed
 // chapter that expires or a household that leaves ends the story badly. Points go through the normal task path.
+import { houseLabel } from '../shared/house.ts';
 import { DB, getMeta, setMeta } from './db.ts';
 import { STORIES, StoryTemplate, storyByCode, storyText, ROLE_NAMES, Role, FAME_NAMES } from '../shared/guestlib.ts';
 import { Effect } from '../shared/tasklib.ts';
@@ -74,7 +75,7 @@ export class StoryDirector {
       if (!cel || !(tpl.celebrities.includes(cel) || (tpl.celebrities.includes('*') && !STORIES.some((x) => x !== tpl && x.celebrities?.includes(cel))))) return null;
     } else if (cel && tpl.noRealPeople) return null;
     if (tpl.familiesOnly && cel) return null;
-    return { lead: lead.name, role: ROLE_NAMES[lead.role], household: b.household, omroep: b.profile.omroep, show: b.profile.show, n: String(b.houseNumber), loc: `bungalow ${b.houseNumber}`, fame: FAME_NAMES[b.profile.fame] };
+    return { lead: lead.name, role: ROLE_NAMES[lead.role], household: b.household, omroep: b.profile.omroep, show: b.profile.show, n: houseLabel(b.houseNumber), loc: `bungalow ${houseLabel(b.houseNumber)}`, fame: FAME_NAMES[b.profile.fame] };
   }
 
   /** Start a storyline (random fitting one when no code/booking is given). Throws a message when impossible. */

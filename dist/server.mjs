@@ -5,6 +5,64 @@ import { join as join6, dirname as dirname3 } from "node:path";
 import { fileURLToPath as fileURLToPath2 } from "node:url";
 import { existsSync as existsSync6 } from "node:fs";
 
+// src/shared/house.ts
+function houseLabel(n) {
+  return n >= 1e3 ? `${n - 1e3}A` : String(n);
+}
+function houseSize(type, pdfSideM) {
+  const t2 = type ?? "6C";
+  const cap = parseInt(t2, 10) || 6;
+  const size = cap <= 4 ? [6.4, 8.6] : cap <= 6 ? [7, 9.8] : cap <= 8 ? [7.6, 11] : cap <= 12 ? [8.4, 12.6] : [9.2, 15];
+  const annex = cap >= 6 || /E|K/.test(t2.slice(1));
+  let scale = 1;
+  if (pdfSideM && pdfSideM > 4) {
+    const box = pdfSideM * 1.1;
+    scale = Math.max(0.65, Math.min(1, box / (size[0] + 0.8 + (annex ? 3 : 0)), box / (size[1] + 0.8 + 3.6)));
+  }
+  return { W: size[0], D: size[1], annex, cap, scale };
+}
+var PATIO_D = 3.6;
+var ANNEX_W = 3;
+function hrand(seed) {
+  let s = seed * 2654435761 >>> 0;
+  return () => {
+    s ^= s << 13;
+    s >>>= 0;
+    s ^= s >>> 17;
+    s ^= s << 5;
+    s >>>= 0;
+    return (s >>> 0) / 4294967296;
+  };
+}
+function annexSide(num) {
+  return hrand(num * 31 + 3)() < 0.5 ? -1 : 1;
+}
+function houseFootprint(pos, front, s, num, opts = {}) {
+  const m = opts.margin ?? 0, k = s.scale;
+  const back = (s.D / 2 + 0.4) * k, ahead = (s.D / 2 + (opts.patio === false ? 0.4 : PATIO_D)) * k;
+  const side = annexSide(num), a = s.annex ? ANNEX_W : 0;
+  const left = (s.W / 2 + 0.4 + (side < 0 ? a : 0)) * k, right = (s.W / 2 + 0.4 + (side > 0 ? a : 0)) * k;
+  const cl = (ahead - back) / 2, cw = (right - left) / 2;
+  const rx = -front.y, ry = front.x;
+  return {
+    cx: pos.x + front.x * cl + rx * cw,
+    cy: pos.y + front.y * cl + ry * cw,
+    ux: front.x,
+    uy: front.y,
+    hl: (ahead + back) / 2 + m,
+    hw: (left + right) / 2 + m
+  };
+}
+function footprintSamples(f, nl = 5, nw = 3) {
+  const out = [];
+  const vx = -f.uy, vy = f.ux;
+  for (let i = 0; i < nl; i++) for (let j = 0; j < nw; j++) {
+    const a = (i / (nl - 1) * 2 - 1) * f.hl, b = (j / (nw - 1) * 2 - 1) * f.hw;
+    out.push({ x: f.cx + f.ux * a + vx * b, y: f.cy + f.uy * a + vy * b });
+  }
+  return out;
+}
+
 // src/server/game.ts
 import { createHash, randomBytes, randomUUID } from "node:crypto";
 
@@ -389,61 +447,6 @@ function rng(seed) {
       a = s >>> 0;
     }
   };
-}
-
-// src/shared/house.ts
-function houseSize(type, pdfSideM) {
-  const t2 = type ?? "6C";
-  const cap = parseInt(t2, 10) || 6;
-  const size = cap <= 4 ? [6.4, 8.6] : cap <= 6 ? [7, 9.8] : cap <= 8 ? [7.6, 11] : cap <= 12 ? [8.4, 12.6] : [9.2, 15];
-  const annex = cap >= 6 || /E|K/.test(t2.slice(1));
-  let scale = 1;
-  if (pdfSideM && pdfSideM > 4) {
-    const box = pdfSideM * 1.1;
-    scale = Math.max(0.65, Math.min(1, box / (size[0] + 0.8 + (annex ? 3 : 0)), box / (size[1] + 0.8 + 3.6)));
-  }
-  return { W: size[0], D: size[1], annex, cap, scale };
-}
-var PATIO_D = 3.6;
-var ANNEX_W = 3;
-function hrand(seed) {
-  let s = seed * 2654435761 >>> 0;
-  return () => {
-    s ^= s << 13;
-    s >>>= 0;
-    s ^= s >>> 17;
-    s ^= s << 5;
-    s >>>= 0;
-    return (s >>> 0) / 4294967296;
-  };
-}
-function annexSide(num) {
-  return hrand(num * 31 + 3)() < 0.5 ? -1 : 1;
-}
-function houseFootprint(pos, front, s, num, opts = {}) {
-  const m = opts.margin ?? 0, k = s.scale;
-  const back = (s.D / 2 + 0.4) * k, ahead = (s.D / 2 + (opts.patio === false ? 0.4 : PATIO_D)) * k;
-  const side = annexSide(num), a = s.annex ? ANNEX_W : 0;
-  const left = (s.W / 2 + 0.4 + (side < 0 ? a : 0)) * k, right = (s.W / 2 + 0.4 + (side > 0 ? a : 0)) * k;
-  const cl = (ahead - back) / 2, cw = (right - left) / 2;
-  const rx = -front.y, ry = front.x;
-  return {
-    cx: pos.x + front.x * cl + rx * cw,
-    cy: pos.y + front.y * cl + ry * cw,
-    ux: front.x,
-    uy: front.y,
-    hl: (ahead + back) / 2 + m,
-    hw: (left + right) / 2 + m
-  };
-}
-function footprintSamples(f, nl = 5, nw = 3) {
-  const out = [];
-  const vx = -f.uy, vy = f.ux;
-  for (let i = 0; i < nl; i++) for (let j = 0; j < nw; j++) {
-    const a = (i / (nl - 1) * 2 - 1) * f.hl, b = (j / (nw - 1) * 2 - 1) * f.hw;
-    out.push({ x: f.cx + f.ux * a + vx * b, y: f.cy + f.uy * a + vy * b });
-  }
-  return out;
 }
 
 // src/sim/network.ts
@@ -1244,6 +1247,9 @@ function buildNetwork(net, sector) {
   const viewW = (sector.viewPts[2] - sector.viewPts[0]) * k, viewH = (sector.viewPts[3] - sector.viewPts[1]) * k;
   return { edges, nodes, zones, zonesByEdge, stalls, stallsByHouse, gates, portals, roads, islands, houses, toWorld, bounds: { w: viewW, h: viewH }, validation };
 }
+function visitorPortal(net) {
+  return [...net.portals.values()].filter((p) => p.kind === "public").map((p) => p.id).sort()[0] ?? "";
+}
 function findRoute(net, fromEdge, toEdge, kind, opts = {}) {
   const gateEdges = new Set([...net.gates.values()].filter((g) => !g.staff).map((g) => g.edge));
   const allowed = (e) => kind === "visitor" ? e.visitor : e.service;
@@ -1264,7 +1270,7 @@ function findRoute(net, fromEdge, toEdge, kind, opts = {}) {
       if (n.kind === "driveway" && nid !== toEdge) continue;
       if (n.kind === "reverse") continue;
       if (n.uturn && !opts.uturn) continue;
-      const nd = d + e.line.length + (kind === "service" && gateEdges.has(nid) ? 400 : 0);
+      const nd = d + e.line.length + (kind === "service" && gateEdges.has(nid) ? 2e4 : 0);
       if (nd < (distM.get(nid) ?? Infinity)) {
         distM.set(nid, nd);
         prev.set(nid, id);
@@ -1337,14 +1343,14 @@ var MinHeap = class {
 var here = dirname2(fileURLToPath(import.meta.url));
 var DATA_DIR = [join(here, "..", "..", "data", "map"), join(here, "..", "data", "map")].find((p) => existsSync(p)) ?? join(here, "..", "..", "data", "map");
 function loadMapJson(dir = process.env.MAP_DIR ?? DATA_DIR) {
-  const set = process.env.MAP_SET === "sector" ? ["sector_road_network.json", "sector_receptie_west.json"] : ["park_road_network.json", "park.json"];
+  const set = ["park_road_network.json", "park.json"];
   const net = JSON.parse(readFileSync(join(dir, set[0]), "utf8"));
   const sector = JSON.parse(readFileSync(join(dir, set[1]), "utf8"));
   return { net, sector };
 }
 var cache = /* @__PURE__ */ new Map();
 function loadNetwork(dir) {
-  const key = `${dir ?? process.env.MAP_DIR ?? DATA_DIR}|${process.env.MAP_SET ?? "park"}`;
+  const key = `${dir ?? process.env.MAP_DIR ?? DATA_DIR}`;
   let n = cache.get(key);
   if (!n) {
     const { net, sector } = loadMapJson(dir);
@@ -3189,7 +3195,6 @@ function storyText(s, v) {
 }
 
 // src/sim/park.ts
-var VISITOR_PORTAL = "P_W";
 var CAR_COLORS = ["#e9ecef", "#1f2326", "#9aa3ab", "#2f4f7f", "#8e1d24", "#cfd4d8", "#3c4b3a", "#5a6470", "#f2f2ee", "#273441", "#6b2f2a", "#b7b9b2"];
 var ParkSim = class {
   traffic;
@@ -3204,6 +3209,8 @@ var ParkSim = class {
   gateCache = /* @__PURE__ */ new Map();
   /** service entrances (emergency exits used by service vehicles) */
   servicePortals;
+  /** visitors enter and leave the park at the public entrance */
+  visitorPortal;
   /** turning circles a patrolling maintenance van can visit */
   patrolLoops;
   seed;
@@ -3212,6 +3219,7 @@ var ParkSim = class {
     this.net = net;
     this.hooks = hooks;
     this.rand = rng(seed * 7919 + 13);
+    this.visitorPortal = visitorPortal(net);
     this.servicePortals = [...net.portals.values()].filter((p) => p.kind === "service" && p.spawnEdge && p.despawnEdge).map((p) => p.id);
     this.patrolLoops = [...net.edges.values()].filter((e) => e.kind === "loop" && e.service && e.cls === "park").map((e) => e.id).sort();
     for (const st of net.stalls.values()) if (st.houseNumber > 0) this.houses.set(st.houseNumber, { state: "vacant" });
@@ -3301,7 +3309,7 @@ var ParkSim = class {
     this.bookings.set(id, b);
     this.houses.set(house2, { state: "reserved", bookingId: id });
     this.setStatus(b, "arriving");
-    this.traffic.enqueueArrival(this.makeCar(vid), { type: "arrive", bookingId: id, stallId: st.id, gateId: this.gatesFor(house2).in }, VISITOR_PORTAL, this.t + (opts.delaySec ?? 0));
+    this.traffic.enqueueArrival(this.makeCar(vid), { type: "arrive", bookingId: id, stallId: st.id, gateId: this.gatesFor(house2).in }, this.visitorPortal, this.t + (opts.delaySec ?? 0));
     return b;
   }
   /** Put households into some bungalows at start (parked car, guests inside). */
@@ -3328,7 +3336,7 @@ var ParkSim = class {
     this.setStatus(b, "departing");
     const house2 = this.net.houses.find((h) => h.number === b.houseNumber);
     veh.boarding = b.guests.length;
-    this.traffic.requestDeparture(veh.spec.id, { type: "depart", bookingId: b.id, stallId: b.stallId, gateId: this.gatesFor(b.houseNumber).out, portal: VISITOR_PORTAL });
+    this.traffic.requestDeparture(veh.spec.id, { type: "depart", bookingId: b.id, stallId: b.stallId, gateId: this.gatesFor(b.houseNumber).out, portal: this.visitorPortal });
     b.guests.forEach((g, i) => {
       const path = this.walkPath(house2.door, veh, i);
       this.traffic.spawnPedestrian({ name: g.name, color: g.color, path, purpose: "to_car", bookingId: b.id, vehicleId: veh.spec.id, speed: 1.15 + i * 0.07 });
@@ -3624,7 +3632,7 @@ var ParkSim = class {
     if (hit) return hit;
     const st = this.net.stallsByHouse.get(house2);
     if (!st) return { in: "", out: "" };
-    const portal = this.net.portals.get(VISITOR_PORTAL);
+    const portal = this.net.portals.get(this.visitorPortal);
     const pick2 = (dir, from, to) => {
       let best = { id: "", len: Infinity };
       for (const g of this.net.gates.values()) {
@@ -4703,7 +4711,7 @@ var StoryDirector = class {
       if (!cel || !(tpl.celebrities.includes(cel) || tpl.celebrities.includes("*") && !STORIES.some((x) => x !== tpl && x.celebrities?.includes(cel)))) return null;
     } else if (cel && tpl.noRealPeople) return null;
     if (tpl.familiesOnly && cel) return null;
-    return { lead: lead.name, role: ROLE_NAMES[lead.role], household: b.household, omroep: b.profile.omroep, show: b.profile.show, n: String(b.houseNumber), loc: `bungalow ${b.houseNumber}`, fame: FAME_NAMES[b.profile.fame] };
+    return { lead: lead.name, role: ROLE_NAMES[lead.role], household: b.household, omroep: b.profile.omroep, show: b.profile.show, n: houseLabel(b.houseNumber), loc: `bungalow ${houseLabel(b.houseNumber)}`, fame: FAME_NAMES[b.profile.fame] };
   }
   /** Start a storyline (random fitting one when no code/booking is given). Throws a message when impossible. */
   start(opts = {}) {
@@ -5142,7 +5150,7 @@ data: ${JSON.stringify(this.projectorState())}
       kind,
       category: "Receptie",
       title: kind === "checkin" ? `Check-in ${b.household}` : `Check-out ${b.household}`,
-      description: kind === "checkin" ? `${b.household} (${lead}${b.guests.length > 2 ? " e.a." : ""}) wacht met kenteken ${plate} voor de inrijslagboom. Controleer de reservering voor bungalow ${b.houseNumber} en geef de sleutel mee.` : `${b.household} staat met kenteken ${plate} voor de uitrijslagboom. Neem de sleutel van bungalow ${b.houseNumber} in en rond de eindafrekening af.`,
+      description: kind === "checkin" ? `${b.household} (${lead}${b.guests.length > 2 ? " e.a." : ""}) wacht met kenteken ${plate} voor de inrijslagboom. Controleer de reservering voor bungalow ${houseLabel(b.houseNumber)} en geef de sleutel mee.` : `${b.household} staat met kenteken ${plate} voor de uitrijslagboom. Neem de sleutel van bungalow ${houseLabel(b.houseNumber)} in en rond de eindafrekening af.`,
       location_id: kind === "checkin" ? "F-A" : `H${b.houseNumber}`,
       booking_id: b.id,
       vehicle_id: b.vehicleId,
@@ -5184,7 +5192,10 @@ data: ${JSON.stringify(this.projectorState())}
     });
   }
   locationName(id, grounds = false) {
-    if (id.startsWith("H")) return grounds ? `het pad bij bungalow ${id.slice(1)}` : `bungalow ${id.slice(1)}`;
+    if (id.startsWith("H")) {
+      const n = houseLabel(Number(id.slice(1)));
+      return grounds ? `het pad bij bungalow ${n}` : `bungalow ${n}`;
+    }
     return this.facIndex.find((f) => f.id === id)?.name ?? id;
   }
   schedEnv() {
@@ -5702,7 +5713,7 @@ data: ${JSON.stringify(this.projectorState())}
   assertTechOnSite(t2) {
     const st = this.park.techStatus(t2.id);
     if (!st || st.onSite) return;
-    const where = st.phase === "pending" ? "wacht nog op een vrije golfkar" : st.phase === "driving" ? `rijdt met ${st.vehicleId} naar bungalow ${st.houseNumber}` : `loopt naar bungalow ${st.houseNumber}`;
+    const where = st.phase === "pending" ? "wacht nog op een vrije golfkar" : st.phase === "driving" ? `rijdt met ${st.vehicleId} naar bungalow ${houseLabel(st.houseNumber)}` : `loopt naar bungalow ${houseLabel(st.houseNumber)}`;
     throw new ApiError(409, "technician_not_on_site", `De monteur is nog niet ter plaatse (${where}). Afronden kan zodra hij in de bungalow is.`, { technician: st });
   }
   // ------------------------------------------------------------------ gate passage tokens
@@ -6012,7 +6023,6 @@ data: ${JSON.stringify(this.projectorState())}
   }
   /** Map editor: make a saved version the active map (validated in full first), then restart the game on it. */
   async activateMap(id) {
-    if (process.env.MAP_SET === "sector") throw new ApiError(409, "sector_map", "De proefsector (MAP_SET=sector) is niet met de editor te bewerken");
     const { diag } = await this.maps.activate(id);
     clearNetworkCache();
     const { net, sector } = loadMapJson();
@@ -6435,7 +6445,7 @@ function openApiSpec() {
 import { readFileSync as readFileSync3, existsSync as existsSync3, readdirSync } from "node:fs";
 import { join as join3 } from "node:path";
 function mapReport(bundle, dir, publicRoot = join3(dir, "..", "..", "public")) {
-  const man = JSON.parse(readFileSync3(join3(dir, "aelderholt_manifest.json"), "utf8"));
+  const man = JSON.parse(readFileSync3(join3(dir, "harderwold_manifest.json"), "utf8"));
   const houses = bundle.park.houses;
   const byNum = new Map(houses.map((h) => [h.number, h]));
   const manNums = new Set(man.houses.map((h) => h.number));

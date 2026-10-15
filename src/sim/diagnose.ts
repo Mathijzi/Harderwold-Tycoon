@@ -1,11 +1,9 @@
 // Map diagnostics for the editor: build the network from an edited map bundle and report what the simulation
 // makes of it (problems, resolved house positions, parking stalls, gate queue slots, routes per bungalow).
 // Pure function of the bundle; runs in a worker thread on the server (a full-park build takes a few seconds).
-import { buildNetwork, findRoute, Network } from './network.ts';
+import { buildNetwork, findRoute, Network, visitorPortal } from './network.ts';
 import { checkBundle, MapBundle, Problem } from '../shared/mapdoc.ts';
 import type { Vec } from '../shared/geom.ts';
-
-const VISITOR_PORTAL = 'P_W';
 
 export interface DiagHouse { number: number; pt: number[]; frontDeg: number; scale: number; adjustedM: number; stallId?: string; stallDistM?: number; gateIn?: string; gateOut?: string; routeM?: number }
 export interface Diagnosis {
@@ -33,7 +31,7 @@ const routeLen = (net: Network, r: string[]) => r.reduce((n, id) => n + net.edge
 /** in/out gate of a bungalow = the one on the shortest legal visitor route (same rule as ParkSim.gatesFor) */
 export function houseRoutes(net: Network, house: number) {
   const st = net.stallsByHouse.get(house);
-  const portal = net.portals.get(VISITOR_PORTAL);
+  const portal = net.portals.get(visitorPortal(net));
   if (!st || !portal?.spawnEdge || !portal.despawnEdge) return null;
   const pick = (dir: 'inbound' | 'outbound', from: string, to: string) => {
     let best: { id: string; route: string[]; len: number } | null = null;

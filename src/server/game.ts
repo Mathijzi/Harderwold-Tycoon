@@ -1,4 +1,5 @@
 // Game server core: task state machine, score ledger, gate passage tokens, sim loop, persistence, realtime fan-out.
+import { houseLabel } from '../shared/house.ts';
 import { createHash, randomBytes, randomUUID } from 'node:crypto';
 import { DB, openDb, tx, getMeta, setMeta, wipe } from './db.ts';
 import { loadMapJson, loadNetwork, clearNetworkCache, mapDir } from '../sim/load.ts';
@@ -266,8 +267,8 @@ export class Game {
       id: `T-${kind}-${b.vehicleId}`, template: kind === 'checkin' ? 'REC_CHECKIN' : 'REC_CHECKOUT', kind, category: 'Receptie',
       title: kind === 'checkin' ? `Check-in ${b.household}` : `Check-out ${b.household}`,
       description: kind === 'checkin'
-        ? `${b.household} (${lead}${b.guests.length > 2 ? ' e.a.' : ''}) wacht met kenteken ${plate} voor de inrijslagboom. Controleer de reservering voor bungalow ${b.houseNumber} en geef de sleutel mee.`
-        : `${b.household} staat met kenteken ${plate} voor de uitrijslagboom. Neem de sleutel van bungalow ${b.houseNumber} in en rond de eindafrekening af.`,
+        ? `${b.household} (${lead}${b.guests.length > 2 ? ' e.a.' : ''}) wacht met kenteken ${plate} voor de inrijslagboom. Controleer de reservering voor bungalow ${houseLabel(b.houseNumber)} en geef de sleutel mee.`
+        : `${b.household} staat met kenteken ${plate} voor de uitrijslagboom. Neem de sleutel van bungalow ${houseLabel(b.houseNumber)} in en rond de eindafrekening af.`,
       location_id: kind === 'checkin' ? 'F-A' : `H${b.houseNumber}`, booking_id: b.id, vehicle_id: b.vehicleId, gate_id: gateId,
       icon: kind === 'checkin' ? 'checkin' : 'checkout', offered_at: this.nowMs(), claim_seconds: 300, difficulty: 'easy', urgency: 'normal', points: pointsFor('easy', 'normal'),
     });
@@ -298,7 +299,7 @@ export class Game {
     });
   }
   locationName(id: string, grounds = false) {
-    if (id.startsWith('H')) return grounds ? `het pad bij bungalow ${id.slice(1)}` : `bungalow ${id.slice(1)}`;
+    if (id.startsWith('H')) { const n = houseLabel(Number(id.slice(1))); return grounds ? `het pad bij bungalow ${n}` : `bungalow ${n}`; }
     return this.facIndex.find((f) => f.id === id)?.name ?? id;
   }
   private schedEnv(): SchedulerEnv {
@@ -738,7 +739,7 @@ export class Game {
   private assertTechOnSite(t: TaskRow) {
     const st = this.park.techStatus(t.id);
     if (!st || st.onSite) return;
-    const where = st.phase === 'pending' ? 'wacht nog op een vrije golfkar' : st.phase === 'driving' ? `rijdt met ${st.vehicleId} naar bungalow ${st.houseNumber}` : `loopt naar bungalow ${st.houseNumber}`;
+    const where = st.phase === 'pending' ? 'wacht nog op een vrije golfkar' : st.phase === 'driving' ? `rijdt met ${st.vehicleId} naar bungalow ${houseLabel(st.houseNumber)}` : `loopt naar bungalow ${houseLabel(st.houseNumber)}`;
     throw new ApiError(409, 'technician_not_on_site', `De monteur is nog niet ter plaatse (${where}). Afronden kan zodra hij in de bungalow is.`, { technician: st });
   }
 
@@ -1010,7 +1011,6 @@ export class Game {
   mapChecksum() { return checksum(JSON.stringify({ n: this.netJson, s: this.sectorJson })); }
   /** Map editor: make a saved version the active map (validated in full first), then restart the game on it. */
   async activateMap(id: number) {
-    if (process.env.MAP_SET === 'sector') throw new ApiError(409, 'sector_map', 'De proefsector (MAP_SET=sector) is niet met de editor te bewerken');
     const { diag } = await this.maps.activate(id);
     clearNetworkCache();
     const { net, sector } = loadMapJson();

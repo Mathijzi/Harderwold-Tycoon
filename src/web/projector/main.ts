@@ -44,7 +44,10 @@ interface StateMsg {
 }
 
 let net: Network;
-let sector: SectorJson & { terrain: { water: number[][][]; footpaths: number[][][]; roadSurfaces: number[][][] }; structures: Structure[]; facilities: { key: string; name: string; pt: number[] }[]; massing?: Massing };
+/** loose decor from park.json (map-specific positions in PDF points) */
+interface Decor { sign?: number[]; flags?: number[][]; flowerBeds?: number[][]; lampRoad?: string; staffRoad?: string; focus?: Record<string, string>; trees?: number[][] }
+interface Golf { fairways: number[][][]; greens: number[][][]; bunkers: number[][][] }
+let sector: SectorJson & { terrain: { water: number[][][]; footpaths: number[][][]; roadSurfaces: number[][][]; golf?: Golf; forest?: number[][][] }; structures: Structure[]; facilities: { key: string; name: string; pt: number[] }[]; massing?: Massing; decor?: Decor };
 const frames: Frame[] = [];
 let state: StateMsg | null = null;
 let rate = 1;
@@ -129,7 +132,9 @@ function focusPoint(q: string): V2 {
   if (m) return { x: Number(m[1]), y: Number(m[2]) };
   const hn = Number(q.replace(/^H/i, ''));
   if (Number.isFinite(hn) && hn > 0) { const h = net.houses.find((x) => x.number === hn); if (h) return h.pos; }
-  const key = q.length <= 2 ? q.toUpperCase() : ({ receptie: 'A', zwembad: 'J', brasserie: 'G', snackbar: 'H', fietsverhuur: 'W', tent: 'Y', bowling: 'C', parkshop: 'V' } as Record<string, string>)[q.toLowerCase()];
+  const named = sector.decor?.focus?.[q.toLowerCase()];
+  if (named === 'gate') { const g = net.gates.get('gate-in') ?? [...net.gates.values()][0]; if (g) return g.stopPoint; }
+  const key = q.length <= 2 ? q.toUpperCase() : named;
   if (key) {
     const vp = sector.viewPts, cx = (vp[0] + vp[2]) / 2, cy = (vp[1] + vp[3]) / 2;
     const f = sector.facilities.filter((x) => x.key === key).sort((a, b) => Math.hypot(a.pt[0] - cx, a.pt[1] - cy) - Math.hypot(b.pt[0] - cx, b.pt[1] - cy))[0];
@@ -245,13 +250,15 @@ async function buildScene() {
     const sAt = L(lotSpec.lengthPt + 1.6, lotSpec.aisles[0] - 2.6);
     statics.push({ key: sAt.y * cam.CE, at: sAt, box: [1.4, 3.6], draw: (ctx) => drawStaffSign(ctx, sAt) });
   }
-  // sign + flags + lamps + intercoms
-  const signAt = W([423.5, 150.2]);
-  statics.push({ key: signAt.y * cam.CE, at: signAt, box: [4.5, 4.5], draw: (ctx) => drawSign(ctx, signAt) });
-  [W([417.0, 151.6]), W([419.2, 151.9]), W([421.4, 152.2])].forEach((p, i) => statics.push({ key: p.y * cam.CE, at: p, box: [2.2, 8.5], anim: true, draw: (ctx, t) => drawFlag(ctx, p, t, i * 1.7) }));
+  // sign + flags + lamps + intercoms (positions from park.json "decor")
+  const decor = sector.decor ?? {};
+  const signAt = decor.sign ? W(decor.sign) : null;
+  if (signAt) statics.push({ key: signAt.y * cam.CE, at: signAt, box: [4.5, 4.5], draw: (ctx) => drawSign(ctx, signAt) });
+  const flagPts = (decor.flags ?? []).map(W);
+  flagPts.forEach((p, i) => statics.push({ key: p.y * cam.CE, at: p, box: [2.2, 8.5], anim: true, draw: (ctx, t) => drawFlag(ctx, p, t, i * 1.7) }));
   const lampPts: V2[] = [];
-  const tw = net.roads.find((r) => r.id === 'toegangsweg')!;
-  for (let i = 12; i < tw.center.length - 6; i += 22) {
+  const tw = net.roads.find((r) => r.id === decor.lampRoad);
+  for (let i = 12; tw && i < tw.center.length - 6; i += 22) {
     const a = tw.center[i], b = tw.center[Math.min(tw.center.length - 1, i + 1)];
     const t = { x: b.x - a.x, y: b.y - a.y }; const l = Math.hypot(t.x, t.y) || 1;
     lampPts.push({ x: a.x + (-t.y / l) * -(tw.halfWidth[i] + 1.2), y: a.y + (t.x / l) * -(tw.halfWidth[i] + 1.2) });
@@ -327,10 +334,14 @@ async function buildScene() {
     // tree crowns lean north in the camera view: keep the car park, its south side and the staff road clear
     mask.poly(lot.outline, 1.8);
     for (const dy of [4, 8, 12]) mask.poly(lot.outline.map((p) => ({ x: p.x, y: p.y + dy })), 1.5);
-    const staff = net.roads.find((r) => r.id === 'dienstweg-oost');
+    const staff = net.roads.find((r) => r.id === decor.staffRoad);
     if (staff) for (const dy of [0, 4, 8, 12]) mask.line(staff.center.map((p) => ({ x: p.x, y: p.y + dy })), 11);
   }
-  mask.circle(signAt, 6); mask.circle(W([419, 152]), 5);
+  if (signAt) mask.circle(signAt, 6);
+  for (const p of flagPts) mask.circle(p, 3);
+  // golf course: no trees on fairways, greens and bunkers
+  const golf = sector.terrain.golf;
+  if (golf) for (const g of [...golf.fairways, ...golf.greens, ...golf.bunkers]) mask.poly(g.map(W), 1.5);
   for (const p of parking) mask.line(p.pts, 6);
   mask.freeze();
   // 'hard' mask for shrubs: everything except the house gardens
@@ -353,7 +364,26 @@ async function buildScene() {
   for (const r of net.roads) for (let i = 0; i < r.center.length; i += 4) attract.push(r.center[i]);
   const near = (x: number, y: number) => { let d = 1e9; for (const p of attract) { const q = (p.x - x) ** 2 + (p.y - y) ** 2; if (q < d) d = q; } return Math.sqrt(d); };
   await pause();
-  const trees = placeTrees(mask, near, net.bounds, 5).filter((t) => inView(t.x, t.y, 20));
+  // forest areas from the map (park.json terrain.forest): dense there, only a few loose trees elsewhere
+  let density: ((x: number, y: number) => number) | undefined;
+  const forestPolys = sector.terrain.forest;
+  if (forestPolys?.length) {
+    const fm = new Mask(net.bounds.w, net.bounds.h);
+    for (const f of forestPolys) fm.poly(f.map(W));
+    fm.freeze();
+    density = (x, y) => (fm.blocked(x, y) ? 0.92 : 0.004);
+  }
+  const trees = placeTrees(mask, near, net.bounds, 5, density).filter((t) => inView(t.x, t.y, 20));
+  // single trees and small clumps exactly where the plan draws them (park.json decor.trees: [x, y, crown radius m])
+  if (decor.trees?.length) {
+    const pool = [0, 1, 2, 3, 4, 5].map((i) => makeTree('oak', 600 + i, 9 + (i % 3) * 1.6)).concat([0, 1, 2].map((i) => makeTree('birch', 650 + i, 9 + i * 1.5)));
+    const tr = hrand(31);
+    for (const [px, py] of decor.trees) {
+      const p = W([px, py]);
+      if (mask.blocked(p.x, p.y) || !inView(p.x, p.y, 20)) continue;
+      trees.push({ x: p.x, y: p.y, sp: pool[Math.floor(tr() * pool.length)], key: p.y * cam.CE });
+    }
+  }
   await pause();
   // shrubs near the focus houses
   const shrubR = hrand(8);
@@ -391,7 +421,8 @@ async function buildScene() {
     roadSurfaces: sector.terrain.roadSurfaces.map((f) => f.map(W)),
     fields: sector.structures.filter((s) => s.kind === 'field').map((s) => ({ pts: s.pts.map(W), kind: s.name ?? '' })),
     shadows, trees, bakedTrees: baked, parking, paved, lot,
-    flowerBeds: [W([410, 190]), W([418, 191]), W([427, 189.5]), W([395, 189]), W([372, 186])],
+    flowerBeds: (decor.flowerBeds ?? []).map(W),
+    golf: golf ? { fairways: golf.fairways.map((g) => g.map(W)), greens: golf.greens.map((g) => g.map(W)), bunkers: golf.bunkers.map((g) => g.map(W)) } : undefined,
     sandPaths,
   });
   } finally { Object.assign(cam, savedCam); }

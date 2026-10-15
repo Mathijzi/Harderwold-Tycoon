@@ -1,5 +1,5 @@
 // Asset completeness report for the map editor: compares the (edited) map with the automatic PDF manifest
-// (data/map/aelderholt_manifest.json) and lists what still needs a human check. Nothing is "fixed" here.
+// (data/map/harderwold_manifest.json, tools/harderwold/build_map.py) and lists what still needs a human check. Nothing is "fixed" here.
 import { readFileSync, existsSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import type { MapBundle } from '../shared/mapdoc.ts';
@@ -13,7 +13,7 @@ interface Manifest {
 }
 
 export function mapReport(bundle: MapBundle, dir: string, publicRoot = join(dir, '..', '..', 'public')) {
-  const man = JSON.parse(readFileSync(join(dir, 'aelderholt_manifest.json'), 'utf8')) as Manifest;
+  const man = JSON.parse(readFileSync(join(dir, 'harderwold_manifest.json'), 'utf8')) as Manifest;
   const houses = bundle.park.houses;
   const byNum = new Map(houses.map((h) => [h.number, h]));
   const manNums = new Set(man.houses.map((h) => h.number));

@@ -39,6 +39,8 @@ export interface GroundInput {
   /** paved areas: terraces (tiles) and service yards (pavers) */
   paved?: { pts: V2[]; kind: 'tiles' | 'pavers' }[];
   lot?: GroundLot;
+  /** golf course from the map: fairways, greens and bunkers */
+  golf?: { fairways: V2[][]; greens: V2[][]; bunkers: V2[][] };
   /** the ground is drawn spriteScale times larger than the (tree) sprites: draw those enlarged */
   spriteScale?: number;
 }
@@ -81,6 +83,33 @@ export function renderGround(inp: GroundInput): HTMLCanvasElement {
       ctx.save(); ctx.clip();
       for (let k = 0; k < 40; k++) { const a = P(0, k * 4), b = P(400, k * 4 + 2); ctx.fillStyle = k % 2 ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.04)'; ctx.fillRect(0, a.y, W, Math.max(2, b.y - a.y)); }
       ctx.restore(); ctx.strokeStyle = 'rgba(255,255,255,0.75)'; ctx.lineWidth = 2 * cam.RS; path(ctx, f.pts); ctx.stroke();
+    }
+  }
+  // 3b. golf course: mown fairways (stripes), greens (short, bright, with a flag hole) and sand bunkers
+  if (inp.golf) {
+    for (const f of inp.golf.fairways) {
+      path(ctx, f); ctx.fillStyle = '#86b04e'; ctx.fill();
+      ctx.save(); path(ctx, f); ctx.clip();
+      const ys = f.map((p) => P(p.x, p.y).y), xs = f.map((p) => P(p.x, p.y).x);
+      const x0 = Math.min(...xs), x1 = Math.max(...xs), y0 = Math.min(...ys), y1 = Math.max(...ys), st = 3.2 * cam.S;
+      for (let k = 0, x = x0 - (y1 - y0); x < x1; x += st, k++) {
+        if (k % 2) continue;
+        ctx.fillStyle = 'rgba(255,255,255,0.07)'; ctx.beginPath(); ctx.moveTo(x, y0); ctx.lineTo(x + st, y0); ctx.lineTo(x + st + (y1 - y0) * 0.6, y1); ctx.lineTo(x + (y1 - y0) * 0.6, y1); ctx.fill();
+      }
+      ctx.restore();
+      ctx.strokeStyle = 'rgba(60,90,30,0.35)'; ctx.lineWidth = 0.5 * cam.S; path(ctx, f); ctx.stroke();
+    }
+    for (const g of inp.golf.greens) {
+      path(ctx, g); ctx.fillStyle = '#9fcc5c'; ctx.fill();
+      ctx.strokeStyle = 'rgba(70,110,35,0.5)'; ctx.lineWidth = 0.35 * cam.S; ctx.stroke();
+      const c = g.reduce((a, p) => ({ x: a.x + p.x / g.length, y: a.y + p.y / g.length }), { x: 0, y: 0 }), s0 = P(c.x, c.y), top = P(c.x, c.y, 2.2);
+      ctx.fillStyle = '#1d2a1a'; ctx.beginPath(); ctx.ellipse(s0.x, s0.y, 0.18 * cam.S, 0.12 * cam.S, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.strokeStyle = '#f2f2ee'; ctx.lineWidth = Math.max(1, 0.06 * cam.S); ctx.beginPath(); ctx.moveTo(s0.x, s0.y); ctx.lineTo(top.x, top.y); ctx.stroke();
+      ctx.fillStyle = '#d8342c'; ctx.beginPath(); ctx.moveTo(top.x, top.y); ctx.lineTo(top.x + 0.7 * cam.S, top.y + 0.2 * cam.S); ctx.lineTo(top.x, top.y + 0.45 * cam.S); ctx.fill();
+    }
+    for (const b of inp.golf.bunkers) {
+      path(ctx, b); ctx.fillStyle = '#e8d6a6'; ctx.fill();
+      ctx.save(); path(ctx, b); ctx.clip(); ctx.strokeStyle = 'rgba(150,120,70,0.45)'; ctx.lineWidth = 0.5 * cam.S; path(ctx, b); ctx.stroke(); ctx.restore();
     }
   }
   // 4. water bodies
@@ -369,7 +398,8 @@ export function renderGround(inp: GroundInput): HTMLCanvasElement {
   for (const e of inp.net.edges.values()) {
     if (e.kind !== 'lane' || e.cls !== 'arrival' || e.next.length === 0) continue;
     const nx = inp.net.edges.get(e.next[0]);
-    if (!nx || nx.kind !== 'connector' || !e.to.startsWith('J_A')) continue;
+    // only where the access road meets a public road
+    if (!nx || nx.kind !== 'connector' || !e.next.some((id) => inp.net.edges.get(id)?.next.some((n2) => inp.net.edges.get(n2)?.cls === 'public'))) continue;
     const s = e.line.length - 0.6, q = e.line.sample(s), t = e.line.tangent(s), rn = { x: -t.y, y: t.x };
     for (let k = -1.2; k <= 1.21; k += 0.6) {
       const pts = [{ x: q.x + rn.x * (k - 0.22), y: q.y + rn.y * (k - 0.22) }, { x: q.x + rn.x * (k + 0.22), y: q.y + rn.y * (k + 0.22) }, { x: q.x + t.x * 0.7 + rn.x * k, y: q.y + t.y * 0.7 + rn.y * k }];

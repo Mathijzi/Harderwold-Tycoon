@@ -44365,7 +44365,7 @@ var Mask = class {
     return this.data[(j2 * this.w + i2) * 4] > 100;
   }
 };
-function placeTrees(mask, near, bounds, seed = 5) {
+function placeTrees(mask, near, bounds, seed = 5, density) {
   const rnd = hrand2(seed);
   const out2 = [];
   const variants = { spruce: [], pine: [], oak: [], birch: [] };
@@ -44383,7 +44383,7 @@ function placeTrees(mask, near, bounds, seed = 5) {
     const dNear = near(x2, y2);
     const edge = Math.min(x2 + 20, bounds.w + 20 - x2, y2 + 16, bounds.h + 30 - y2);
     const forest = Math.min(1, Math.max(0, (dNear - 9) / 16)) * 0.75 + (edge < 14 ? 0.35 : 0);
-    if (rnd() > 0.22 + forest) continue;
+    if (rnd() > (density ? density(x2, y2) : 0.22 + forest)) continue;
     const sp = rnd() < 0.42 ? "spruce" : rnd() < 0.55 ? "pine" : rnd() < 0.7 ? "oak" : "birch";
     const minD = sp === "oak" ? 5.4 : sp === "pine" ? 4.6 : 3.9;
     const k2 = keyOf(x2, y2);
@@ -44518,6 +44518,71 @@ function renderGround(inp) {
       ctx2.lineWidth = 2 * cam.RS;
       path(ctx2, f2.pts);
       ctx2.stroke();
+    }
+  }
+  if (inp.golf) {
+    for (const f2 of inp.golf.fairways) {
+      path(ctx2, f2);
+      ctx2.fillStyle = "#86b04e";
+      ctx2.fill();
+      ctx2.save();
+      path(ctx2, f2);
+      ctx2.clip();
+      const ys = f2.map((p2) => P(p2.x, p2.y).y), xs = f2.map((p2) => P(p2.x, p2.y).x);
+      const x0 = Math.min(...xs), x1 = Math.max(...xs), y0 = Math.min(...ys), y1 = Math.max(...ys), st = 3.2 * cam.S;
+      for (let k2 = 0, x2 = x0 - (y1 - y0); x2 < x1; x2 += st, k2++) {
+        if (k2 % 2) continue;
+        ctx2.fillStyle = "rgba(255,255,255,0.07)";
+        ctx2.beginPath();
+        ctx2.moveTo(x2, y0);
+        ctx2.lineTo(x2 + st, y0);
+        ctx2.lineTo(x2 + st + (y1 - y0) * 0.6, y1);
+        ctx2.lineTo(x2 + (y1 - y0) * 0.6, y1);
+        ctx2.fill();
+      }
+      ctx2.restore();
+      ctx2.strokeStyle = "rgba(60,90,30,0.35)";
+      ctx2.lineWidth = 0.5 * cam.S;
+      path(ctx2, f2);
+      ctx2.stroke();
+    }
+    for (const g3 of inp.golf.greens) {
+      path(ctx2, g3);
+      ctx2.fillStyle = "#9fcc5c";
+      ctx2.fill();
+      ctx2.strokeStyle = "rgba(70,110,35,0.5)";
+      ctx2.lineWidth = 0.35 * cam.S;
+      ctx2.stroke();
+      const c3 = g3.reduce((a2, p2) => ({ x: a2.x + p2.x / g3.length, y: a2.y + p2.y / g3.length }), { x: 0, y: 0 }), s0 = P(c3.x, c3.y), top = P(c3.x, c3.y, 2.2);
+      ctx2.fillStyle = "#1d2a1a";
+      ctx2.beginPath();
+      ctx2.ellipse(s0.x, s0.y, 0.18 * cam.S, 0.12 * cam.S, 0, 0, Math.PI * 2);
+      ctx2.fill();
+      ctx2.strokeStyle = "#f2f2ee";
+      ctx2.lineWidth = Math.max(1, 0.06 * cam.S);
+      ctx2.beginPath();
+      ctx2.moveTo(s0.x, s0.y);
+      ctx2.lineTo(top.x, top.y);
+      ctx2.stroke();
+      ctx2.fillStyle = "#d8342c";
+      ctx2.beginPath();
+      ctx2.moveTo(top.x, top.y);
+      ctx2.lineTo(top.x + 0.7 * cam.S, top.y + 0.2 * cam.S);
+      ctx2.lineTo(top.x, top.y + 0.45 * cam.S);
+      ctx2.fill();
+    }
+    for (const b2 of inp.golf.bunkers) {
+      path(ctx2, b2);
+      ctx2.fillStyle = "#e8d6a6";
+      ctx2.fill();
+      ctx2.save();
+      path(ctx2, b2);
+      ctx2.clip();
+      ctx2.strokeStyle = "rgba(150,120,70,0.45)";
+      ctx2.lineWidth = 0.5 * cam.S;
+      path(ctx2, b2);
+      ctx2.stroke();
+      ctx2.restore();
     }
   }
   for (const w2 of inp.water) {
@@ -44991,7 +45056,7 @@ function renderGround(inp) {
   for (const e2 of inp.net.edges.values()) {
     if (e2.kind !== "lane" || e2.cls !== "arrival" || e2.next.length === 0) continue;
     const nx = inp.net.edges.get(e2.next[0]);
-    if (!nx || nx.kind !== "connector" || !e2.to.startsWith("J_A")) continue;
+    if (!nx || nx.kind !== "connector" || !e2.next.some((id) => inp.net.edges.get(id)?.next.some((n2) => inp.net.edges.get(n2)?.cls === "public"))) continue;
     const s2 = e2.line.length - 0.6, q = e2.line.sample(s2), t2 = e2.line.tangent(s2), rn = { x: -t2.y, y: t2.x };
     for (let k2 = -1.2; k2 <= 1.21; k2 += 0.6) {
       const pts = [{ x: q.x + rn.x * (k2 - 0.22), y: q.y + rn.y * (k2 - 0.22) }, { x: q.x + rn.x * (k2 + 0.22), y: q.y + rn.y * (k2 + 0.22) }, { x: q.x + t2.x * 0.7 + rn.x * k2, y: q.y + t2.y * 0.7 + rn.y * k2 }];
@@ -48591,7 +48656,12 @@ function focusPoint(q) {
     const h2 = net.houses.find((x2) => x2.number === hn);
     if (h2) return h2.pos;
   }
-  const key = q.length <= 2 ? q.toUpperCase() : { receptie: "A", zwembad: "J", brasserie: "G", snackbar: "H", fietsverhuur: "W", tent: "Y", bowling: "C", parkshop: "V" }[q.toLowerCase()];
+  const named = sector.decor?.focus?.[q.toLowerCase()];
+  if (named === "gate") {
+    const g2 = net.gates.get("gate-in") ?? [...net.gates.values()][0];
+    if (g2) return g2.stopPoint;
+  }
+  const key = q.length <= 2 ? q.toUpperCase() : named;
   if (key) {
     const vp = sector.viewPts, cx = (vp[0] + vp[2]) / 2, cy = (vp[1] + vp[3]) / 2;
     const f2 = sector.facilities.filter((x2) => x2.key === key).sort((a2, b2) => Math.hypot(a2.pt[0] - cx, a2.pt[1] - cy) - Math.hypot(b2.pt[0] - cx, b2.pt[1] - cy))[0];
@@ -48730,12 +48800,14 @@ async function buildScene() {
     const sAt = L(lotSpec.lengthPt + 1.6, lotSpec.aisles[0] - 2.6);
     statics.push({ key: sAt.y * cam.CE, at: sAt, box: [1.4, 3.6], draw: (ctx2) => drawStaffSign(ctx2, sAt) });
   }
-  const signAt = W([423.5, 150.2]);
-  statics.push({ key: signAt.y * cam.CE, at: signAt, box: [4.5, 4.5], draw: (ctx2) => drawSign(ctx2, signAt) });
-  [W([417, 151.6]), W([419.2, 151.9]), W([421.4, 152.2])].forEach((p2, i2) => statics.push({ key: p2.y * cam.CE, at: p2, box: [2.2, 8.5], anim: true, draw: (ctx2, t2) => drawFlag(ctx2, p2, t2, i2 * 1.7) }));
+  const decor = sector.decor ?? {};
+  const signAt = decor.sign ? W(decor.sign) : null;
+  if (signAt) statics.push({ key: signAt.y * cam.CE, at: signAt, box: [4.5, 4.5], draw: (ctx2) => drawSign(ctx2, signAt) });
+  const flagPts = (decor.flags ?? []).map(W);
+  flagPts.forEach((p2, i2) => statics.push({ key: p2.y * cam.CE, at: p2, box: [2.2, 8.5], anim: true, draw: (ctx2, t2) => drawFlag(ctx2, p2, t2, i2 * 1.7) }));
   const lampPts = [];
-  const tw = net.roads.find((r2) => r2.id === "toegangsweg");
-  for (let i2 = 12; i2 < tw.center.length - 6; i2 += 22) {
+  const tw = net.roads.find((r2) => r2.id === decor.lampRoad);
+  for (let i2 = 12; tw && i2 < tw.center.length - 6; i2 += 22) {
     const a2 = tw.center[i2], b2 = tw.center[Math.min(tw.center.length - 1, i2 + 1)];
     const t2 = { x: b2.x - a2.x, y: b2.y - a2.y };
     const l2 = Math.hypot(t2.x, t2.y) || 1;
@@ -48828,11 +48900,13 @@ async function buildScene() {
   if (lot) {
     mask.poly(lot.outline, 1.8);
     for (const dy of [4, 8, 12]) mask.poly(lot.outline.map((p2) => ({ x: p2.x, y: p2.y + dy })), 1.5);
-    const staff = net.roads.find((r2) => r2.id === "dienstweg-oost");
+    const staff = net.roads.find((r2) => r2.id === decor.staffRoad);
     if (staff) for (const dy of [0, 4, 8, 12]) mask.line(staff.center.map((p2) => ({ x: p2.x, y: p2.y + dy })), 11);
   }
-  mask.circle(signAt, 6);
-  mask.circle(W([419, 152]), 5);
+  if (signAt) mask.circle(signAt, 6);
+  for (const p2 of flagPts) mask.circle(p2, 3);
+  const golf = sector.terrain.golf;
+  if (golf) for (const g2 of [...golf.fairways, ...golf.greens, ...golf.bunkers]) mask.poly(g2.map(W), 1.5);
   for (const p2 of parking) mask.line(p2.pts, 6);
   mask.freeze();
   const hard = new Mask(net.bounds.w, net.bounds.h);
@@ -48867,7 +48941,24 @@ async function buildScene() {
     return Math.sqrt(d2);
   };
   await pause();
-  const trees = placeTrees(mask, near, net.bounds, 5).filter((t2) => inView(t2.x, t2.y, 20));
+  let density;
+  const forestPolys = sector.terrain.forest;
+  if (forestPolys?.length) {
+    const fm = new Mask(net.bounds.w, net.bounds.h);
+    for (const f2 of forestPolys) fm.poly(f2.map(W));
+    fm.freeze();
+    density = (x2, y2) => fm.blocked(x2, y2) ? 0.92 : 4e-3;
+  }
+  const trees = placeTrees(mask, near, net.bounds, 5, density).filter((t2) => inView(t2.x, t2.y, 20));
+  if (decor.trees?.length) {
+    const pool = [0, 1, 2, 3, 4, 5].map((i2) => makeTree("oak", 600 + i2, 9 + i2 % 3 * 1.6)).concat([0, 1, 2].map((i2) => makeTree("birch", 650 + i2, 9 + i2 * 1.5)));
+    const tr = hrand2(31);
+    for (const [px, py] of decor.trees) {
+      const p2 = W([px, py]);
+      if (mask.blocked(p2.x, p2.y) || !inView(p2.x, p2.y, 20)) continue;
+      trees.push({ x: p2.x, y: p2.y, sp: pool[Math.floor(tr() * pool.length)], key: p2.y * cam.CE });
+    }
+  }
   await pause();
   const shrubR = hrand2(8);
   const shrubSprites = [0, 1, 2, 3, 4, 5].map((i2) => makeTree("shrub", 500 + i2, 1.4 + i2 % 3 * 0.35));
@@ -48921,7 +49012,8 @@ async function buildScene() {
       parking,
       paved,
       lot,
-      flowerBeds: [W([410, 190]), W([418, 191]), W([427, 189.5]), W([395, 189]), W([372, 186])],
+      flowerBeds: (decor.flowerBeds ?? []).map(W),
+      golf: golf ? { fairways: golf.fairways.map((g2) => g2.map(W)), greens: golf.greens.map((g2) => g2.map(W)), bunkers: golf.bunkers.map((g2) => g2.map(W)) } : void 0,
       sandPaths
     });
   } finally {

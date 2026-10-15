@@ -134,19 +134,19 @@ test('HTTP API: auth, 10 concurrent claims -> exactly one winner, claim limit 3,
   assert.equal((await req('GET', '/admin/state', undefined, { 'X-Admin-Key': 'nope' })).status, 403);
   // debug endpoint exposes routes, boxes, queue slots and gate states (acceptance test 9)
   const dbg = await req('GET', '/admin/debug', undefined, { 'X-Admin-Key': 'adm' });
-  assert.equal(dbg.status, 200); assert.ok(Array.isArray(dbg.body.vehicles) && dbg.body.vehicles[0].box.length === 4); assert.deepEqual(dbg.body.gates.map((x: any) => x.id).sort(), ['gate-in', 'gate-in-oost', 'gate-out', 'gate-out-oost', 'gate-personeel-in', 'gate-personeel-uit']);
+  assert.equal(dbg.status, 200); assert.ok(Array.isArray(dbg.body.vehicles) && dbg.body.vehicles[0].box.length === 4); assert.deepEqual(dbg.body.gates.map((x: any) => x.id).sort(), ['gate-in', 'gate-out', 'gate-personeel-in', 'gate-personeel-uit']);
   // events polling fallback
   const ev = await req('GET', '/events?after=0&limit=5');
   assert.equal(ev.status, 200); assert.ok(ev.body.events.length > 0);
   srv.close(); g.db.close();
 });
 
-test('TD golf cart: claim sends a cart from the TD post at reception to the bungalow and back, never through a barrier', () => {
+test('TD golf cart: claim sends a cart from the TD post at De loods to the bungalow and back, never through a barrier', () => {
   const g = new Game(cfg(':memory:'));
   const gateEdges = new Set([...g.net.gates.values()].map((x) => x.edge));
   const depot = [...g.net.stalls.values()].filter((s) => s.kind === 'depot');
   assert.equal(depot.length, 2, 'two golf-cart stalls at the TD post');
-  const inc = g.createIncident({ template: 'MAINT_LEAKING_TAP', houseNumber: 167 });
+  const inc = g.createIncident({ template: 'MAINT_LEAKING_TAP', houseNumber: 474 });
   const tom = playerByName(g, 'Tom');
   assert.equal(g.claim(inc.id, tom, 'claim-td-1').status, 200);
   // completing straight after claiming is refused: the mechanic is not there yet
@@ -165,7 +165,7 @@ test('TD golf cart: claim sends a cart from the TD post at reception to the bung
     }
   });
   assert.ok(refusedWhileDriving, 'completion refused while the cart was driving');
-  assert.ok(reached, 'a golf cart parked near bungalow 167');
+  assert.ok(reached, 'a golf cart parked near bungalow 474');
   const job = g.park.techJobs.get(inc.id)!;
   assert.equal(job.phase, 'working');
   assert.ok(job.techInside && g.park.techStatus(inc.id)!.onSite, 'mechanic walked into the bungalow');
@@ -184,7 +184,7 @@ test('TD golf cart: claim sends a cart from the TD post at reception to the bung
 
 test('TD: released while the cart drives and re-claimed by another player - the mechanic still has to arrive first', () => {
   const g = new Game(cfg(':memory:'));
-  const inc = g.createIncident({ template: 'MAINT_COLD_SHOWER', houseNumber: 170 });
+  const inc = g.createIncident({ template: 'MAINT_COLD_SHOWER', houseNumber: 420 });
   const eva = playerByName(g, 'Eva'), bram = playerByName(g, 'Bram');
   assert.equal(g.claim(inc.id, eva, 'c-eva').status, 200);
   steps(g, 60);
@@ -195,7 +195,7 @@ test('TD: released while the cart drives and re-claimed by another player - the 
   assert.throws(() => g.complete(inc.id, bram, 'd-bram'), (e: any) => e.code === 'technician_not_on_site');
   let t = 0;
   while (!g.park.techStatus(inc.id)?.onSite && t < 400) { steps(g, 1); t++; }
-  assert.ok(g.park.techStatus(inc.id)?.onSite, 'mechanic reached bungalow 170 for the new claimant');
+  assert.ok(g.park.techStatus(inc.id)?.onSite, 'mechanic reached bungalow 420 for the new claimant');
   assert.equal(g.complete(inc.id, bram, 'd-bram').status, 200, 'same idempotency key works once on site');
   assert.equal(playerByName(g, 'Bram').score, inc.points);
   assert.equal(playerByName(g, 'Eva').score, 0);
@@ -203,7 +203,7 @@ test('TD: released while the cart drives and re-claimed by another player - the 
 
 test('demo bot never completes a TD task before the mechanic is on site', () => {
   const g = new Game(cfg(':memory:', { demoBot: true }));
-  const inc = g.createIncident({ template: 'MAINT_LEAKING_TAP', houseNumber: 168 });
+  const inc = g.createIncident({ template: 'MAINT_LEAKING_TAP', houseNumber: 468 });
   let last: ReturnType<typeof g.park.techStatus> | undefined;
   let completedOnSite: boolean | null = null;
   steps(g, 900, () => {
@@ -228,7 +228,7 @@ test('HTTP: a TD task returns 409 technician_not_on_site until the mechanic is i
   };
   const tok = (await req('POST', '/sessions/join', { gameCode: 'TEST', displayName: 'Monteurtest' })).body.token;
   const auth = { Authorization: `Bearer ${tok}` };
-  const id = (await req('POST', '/admin/incidents', { template: 'MAINT_BLOCKED_TOILET', houseNumber: 172 }, { 'X-Admin-Key': 'adm' })).body.id;
+  const id = (await req('POST', '/admin/incidents', { template: 'MAINT_BLOCKED_TOILET', houseNumber: 472 }, { 'X-Admin-Key': 'adm' })).body.id;
   assert.equal((await req('POST', `/tasks/${id}/claim`, { idempotencyKey: 'c-mt' }, auth)).status, 200);
   const early = await req('POST', `/tasks/${id}/complete`, { idempotencyKey: 'd-mt' }, auth);
   assert.equal(early.status, 409); assert.equal(early.body.error, 'technician_not_on_site');
@@ -245,7 +245,7 @@ test('service path is closed to visitors: no visitor route may use td-pad', asyn
   const g = new Game(cfg(':memory:'));
   const tdEdges = [...g.net.edges.values()].filter((e) => e.roadId === 'td-pad');
   assert.ok(tdEdges.length > 0 && tdEdges.every((e) => !e.visitor && e.service));
-  const spawn = g.net.portals.get('P_W')!.spawnEdge!;
+  const spawn = g.net.portals.get('P_IN')!.spawnEdge!;
   for (const st of g.net.stalls.values()) {
     if (st.kind !== 'house') continue;
     const r = findRoute(g.net, spawn, st.inEdge, 'visitor');

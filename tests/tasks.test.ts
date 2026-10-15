@@ -64,8 +64,8 @@ test('game: library incidents get a location, copy and points; completion improv
   assert.equal(t.locationId, 'F-J');
   assert.match(t.description, /douches/);
   assert.equal(t.points, pointsFor('easy', 'high'));
-  const h = g.createIncident({ template: 'HK_MUDDY_FLOOR', houseNumber: 166 });
-  assert.equal(h.locationId, 'H166'); assert.match(h.title, /\(166\)/); assert.match(h.description, /bungalow 166/);
+  const h = g.createIncident({ template: 'HK_MUDDY_FLOOR', houseNumber: 501 });
+  assert.equal(h.locationId, 'H501'); assert.match(h.title, /\(501\)/); assert.match(h.description, /bungalow 501/);
   assert.throws(() => g.createIncident({ template: 'NOPE' }), (e: any) => e.status === 422);
   // completion effect on the location (via the regular API)
   const p = g.db.prepare("SELECT * FROM players WHERE display_name = 'Sanne'").get() as any;
@@ -86,17 +86,17 @@ test('game: library incidents get a location, copy and points; completion improv
 test('game: unclaimed tasks expire with timeout effects and escalate once (bounded); claimed timeouts reoffer', () => {
   const g = new Game(cfg());
   g.setSchedulerConfig({ enabled: false });
-  const t = g.createIncident({ template: 'MAINT_LEAKING_TAP', houseNumber: 54 });
+  const t = g.createIncident({ template: 'MAINT_LEAKING_TAP', houseNumber: 554 });
   steps(g, 46 * 60); // offered for longer than offeredMaxMin (45 game minutes)
   const row = g.getTask(t.id)!;
   assert.equal(row.state, 'expired');
-  const follow = g.db.prepare("SELECT * FROM tasks WHERE template = 'MAINT_WATER_DAMAGE' AND location_id = 'H54'").all() as any[];
+  const follow = g.db.prepare("SELECT * FROM tasks WHERE template = 'MAINT_WATER_DAMAGE' AND location_id = 'H554'").all() as any[];
   assert.equal(follow.length, 1, 'one escalation to water damage');
   assert.equal(follow[0].depth, 1);
   steps(g, 46 * 60); // the follow-up expires as well, but has no further escalation
-  assert.equal((g.db.prepare("SELECT COUNT(*) AS n FROM tasks WHERE location_id = 'H54' AND kind = 'incident'").get() as any).n, 2, 'no runaway chain');
+  assert.equal((g.db.prepare("SELECT COUNT(*) AS n FROM tasks WHERE location_id = 'H554' AND kind = 'incident'").get() as any).n, 2, 'no runaway chain');
   // claimed timeout -> reoffered (attempt + 1), not expired
-  const c = g.createIncident({ template: 'HK_MISSING_TOWELS', houseNumber: 55 });
+  const c = g.createIncident({ template: 'HK_MISSING_TOWELS', houseNumber: 555 });
   const p = g.db.prepare("SELECT * FROM players WHERE display_name = 'Tom'").get() as any;
   g.claim(c.id, p, 'k-claim-2');
   steps(g, 11 * 60);

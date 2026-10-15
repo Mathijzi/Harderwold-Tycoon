@@ -865,10 +865,15 @@ export function buildNetwork(net: NetworkJson, sector: SectorJson): Network {
   return { edges, nodes, zones, zonesByEdge, stalls, stallsByHouse, gates, portals, roads, islands, houses, toWorld, bounds: { w: viewW, h: viewH }, validation };
 }
 
+/** The public entrance where visitors arrive and leave (the first public portal of the map). */
+export function visitorPortal(net: Pick<Network, 'portals'>): string {
+  return [...net.portals.values()].filter((p) => p.kind === 'public').map((p) => p.id).sort()[0] ?? '';
+}
+
 /** Dijkstra over legal directed edges. Returns the list of edge ids from `fromEdge` (inclusive) to `toEdge` (inclusive). */
 export function findRoute(net: Network, fromEdge: string, toEdge: string, kind: 'visitor' | 'service', opts: { uturn?: boolean } = {}): string[] | null {
-  // service vehicles avoid visitor barriers: a visitor barrier costs 400 m extra, so their own service roads (with
-  // a staff barrier where needed) always win where one exists
+  // service vehicles avoid visitor barriers: a visitor barrier costs 20 km extra, so their own service roads (with
+  // a staff barrier where needed) always win where one exists, however long the detour (Harderwold: ~2 km)
   const gateEdges = new Set([...net.gates.values()].filter((g) => !g.staff).map((g) => g.edge));
   const allowed = (e: Edge) => (kind === 'visitor' ? e.visitor : e.service);
   const distM = new Map<string, number>([[fromEdge, 0]]);
@@ -889,7 +894,7 @@ export function findRoute(net: Network, fromEdge: string, toEdge: string, kind: 
       if ((n.kind === 'driveway') && nid !== toEdge) continue;
       if (n.kind === 'reverse') continue;
       if (n.uturn && !opts.uturn) continue;
-      const nd = d + e.line.length + (kind === 'service' && gateEdges.has(nid) ? 400 : 0);
+      const nd = d + e.line.length + (kind === 'service' && gateEdges.has(nid) ? 20000 : 0);
       if (nd < (distM.get(nid) ?? Infinity)) { distM.set(nid, nd); prev.set(nid, id); open.push(nd, nid); }
     }
   }

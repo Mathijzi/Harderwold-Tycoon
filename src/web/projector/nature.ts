@@ -186,7 +186,8 @@ export class Mask {
   }
 }
 
-export function placeTrees(mask: Mask, near: (x: number, y: number) => number, bounds: { w: number; h: number }, seed = 5): Placed[] {
+/** `density` (optional) overrides the default chance of a tree at a free spot (0..1), e.g. from forest areas on the map. */
+export function placeTrees(mask: Mask, near: (x: number, y: number) => number, bounds: { w: number; h: number }, seed = 5, density?: (x: number, y: number) => number): Placed[] {
   const rnd = hrand(seed);
   const out: Placed[] = [];
   const variants: Record<string, TreeSprite[]> = { spruce: [], pine: [], oak: [], birch: [] };
@@ -204,7 +205,7 @@ export function placeTrees(mask: Mask, near: (x: number, y: number) => number, b
     const dNear = near(x, y); // distance to the nearest house/road (m)
     const edge = Math.min(x + 20, bounds.w + 20 - x, y + 16, bounds.h + 30 - y);
     const forest = Math.min(1, Math.max(0, (dNear - 9) / 16)) * 0.75 + (edge < 14 ? 0.35 : 0);
-    if (rnd() > 0.22 + forest) continue;
+    if (rnd() > (density ? density(x, y) : 0.22 + forest)) continue;
     const sp: Species = rnd() < 0.42 ? 'spruce' : rnd() < 0.55 ? 'pine' : rnd() < 0.7 ? 'oak' : 'birch';
     const minD = sp === 'oak' ? 5.4 : sp === 'pine' ? 4.6 : 3.9;
     const k = keyOf(x, y);

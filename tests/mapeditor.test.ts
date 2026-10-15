@@ -10,7 +10,7 @@ import { buildNetwork } from '../src/sim/network.ts';
 import { checkBundle, MapBundle, MAP_FORMAT, MAP_SCHEMA } from '../src/shared/mapdoc.ts';
 
 // the editor writes data/map on activation: work on a private copy
-const dir = mkdtempSync(join(tmpdir(), 'aelder-map-'));
+const dir = mkdtempSync(join(tmpdir(), 'harder-map-'));
 cpSync(DATA_DIR, dir, { recursive: true });
 process.env.MAP_DIR = dir;
 after(() => rmSync(dir, { recursive: true, force: true }));
@@ -29,7 +29,7 @@ test('map bundle check: dangling references, duplicate numbers, gate on a missin
   b.network.roads[0].to = 'NOPE';
   b.park.houses[1].number = b.park.houses[0].number;
   b.network.gates[0].road = 'missing-road';
-  const ow = b.network.roads.find((r) => r.oneway === 'f')!;
+  const ow = b.network.roads.find((r) => r.oneway === 'f') ?? Object.assign(b.network.roads[3], { oneway: 'f' as const }); // Harderwold has no one-way roads: make one
   b.network.gates[1].road = ow.id; b.network.gates[1].lane = 'backward';
   b.network.gates[2].queueSlots = 0;
   const msgs = checkBundle(b).filter((p) => p.level === 'error').map((p) => p.msg).join('\n');
@@ -43,16 +43,16 @@ test('map bundle check: dangling references, duplicate numbers, gate on a missin
 
 test('house overrides from the editor: a locked house stays exactly where it was put (conflicts reported), frontDeg sets the door side', () => {
   const b = bundle();
-  const h = b.park.houses.find((x) => x.number === 166)!;
-  const node = b.network.nodes[b.network.roads.find((r) => r.id === 'westlaan')?.from ?? Object.keys(b.network.nodes)[0]];
+  const h = b.park.houses.find((x) => x.number === 501)!;
+  const node = b.network.nodes[b.network.roads.find((r) => r.id === 'laan-500')?.from ?? Object.keys(b.network.nodes)[0]];
   h.pt = [...node.pt]; h.locked = true;              // right on a junction
-  const h2 = b.park.houses.find((x) => x.number === 167)!;
+  const h2 = b.park.houses.find((x) => x.number === 502)!;
   h2.frontDeg = 90;                                   // door to the south
   const net = buildNetwork(b.network, b.park);
-  const hi = net.houses.find((x) => x.number === 166)!, want = net.toWorld(h.pt);
+  const hi = net.houses.find((x) => x.number === 501)!, want = net.toWorld(h.pt);
   assert.ok(Math.hypot(hi.pos.x - want.x, hi.pos.y - want.y) < 1e-6, 'locked house not nudged');
-  assert.ok(net.validation.some((v) => v.level === 'warn' && /Huis 166: met de hand vastgezet/.test(v.msg)));
-  const h7 = net.houses.find((x) => x.number === 167)!;
+  assert.ok(net.validation.some((v) => v.level === 'warn' && /Huis 501: met de hand vastgezet/.test(v.msg)));
+  const h7 = net.houses.find((x) => x.number === 502)!;
   assert.ok(Math.abs(h7.front.x) < 1e-6 && Math.abs(h7.front.y - 1) < 1e-6, 'front points south');
 });
 
@@ -76,7 +76,8 @@ test('map editor API: admin only; versions, full validation with routes, refused
 
     const cur = await call('GET', '/admin/map');
     assert.equal(cur.status, 200);
-    assert.equal(cur.body.park.houses.length, 341);
+    const nHouses = JSON.parse(readFileSync(join(dir, 'park.json'), 'utf8')).houses.length;
+    assert.ok(nHouses >= 330); assert.equal(cur.body.park.houses.length, nHouses);
     assert.ok(cur.body.reviewItems.length >= 10);
 
     // structurally broken -> 422 with the problems
@@ -88,30 +89,30 @@ test('map editor API: admin only; versions, full validation with routes, refused
     const v = await call('POST', '/admin/map/validate', { bundle: cur.body });
     assert.equal(v.status, 200);
     assert.equal(v.body.ok, true, v.body.problems.filter((p: any) => p.level === 'error').map((p: any) => p.msg).join('; '));
-    assert.equal(v.body.summary.houses, 341); assert.equal(v.body.summary.housesWithStall, 341); assert.equal(v.body.summary.unreachable, 0);
-    assert.equal(v.body.derived.gates.length, 6);
-    const rt = await call('GET', `/admin/map/route/${v.body.diagId}/166`);
+    assert.equal(v.body.summary.houses, nHouses); assert.equal(v.body.summary.housesWithStall, nHouses); assert.equal(v.body.summary.unreachable, 0);
+    assert.equal(v.body.derived.gates.length, 4);
+    const rt = await call('GET', `/admin/map/route/${v.body.diagId}/501`);
     assert.equal(rt.status, 200); assert.ok(rt.body.in.gate.startsWith('gate-in')); assert.ok(rt.body.in.pts.length > 5);
 
     // a version whose visitors cannot reach any bungalow is saved (structurally fine) but cannot become active
-    const noEntry = bundle(); noEntry.network.nodes.P_W.kind = 'junction'; delete noEntry.network.nodes.P_W.portal;
+    const noEntry = bundle(); noEntry.network.nodes.P_IN.kind = 'junction'; delete noEntry.network.nodes.P_IN.portal;
     const s1 = await call('POST', '/admin/map/versions', { bundle: noEntry, comment: 'zonder ingang' });
     assert.equal(s1.status, 201);
     assert.equal((await call('POST', `/admin/map/versions/${s1.body.id}/activate`, { confirm: true })).status, 422);
     assert.equal(readFileSync(join(dir, 'park_road_network.json'), 'utf8').includes('"zonder ingang"'), false);
 
     // a real edit: move a bungalow, tick a review item, save, activate
-    const ed = bundle(); const h = ed.park.houses.find((x) => x.number === 166)!; h.pt = [h.pt[0] + 2, h.pt[1]]; ed.review = { scale: true };
-    const s2 = await call('POST', '/admin/map/versions', { bundle: ed, comment: 'huis 166 verplaatst' });
-    assert.equal(s2.status, 201); assert.equal(s2.body.comment, 'huis 166 verplaatst');
+    const ed = bundle(); const h = ed.park.houses.find((x) => x.number === 501)!; h.pt = [h.pt[0] + 2, h.pt[1]]; ed.review = { scale: true };
+    const s2 = await call('POST', '/admin/map/versions', { bundle: ed, comment: 'huis 501 verplaatst' });
+    assert.equal(s2.status, 201); assert.equal(s2.body.comment, 'huis 501 verplaatst');
     assert.equal((await call('POST', `/admin/map/versions/${s2.body.id}/activate`, {})).status, 422, 'confirm required');
     const before = g.park.t; void before;
     const act = await call('POST', `/admin/map/versions/${s2.body.id}/activate`, { confirm: true });
     assert.equal(act.status, 200, JSON.stringify(act.body).slice(0, 300));
     const onDisk = JSON.parse(readFileSync(join(dir, 'park.json'), 'utf8'));
-    assert.deepEqual(onDisk.houses.find((x: any) => x.number === 166).pt, h.pt);
+    assert.deepEqual(onDisk.houses.find((x: any) => x.number === 501).pt, h.pt);
     assert.equal(onDisk.editorVersion.id, s2.body.id); assert.deepEqual(onDisk.editorReview, { scale: true });
-    assert.deepEqual(g.sectorJson.houses.find((x) => x.number === 166)!.pt, h.pt, 'the game runs on the new map');
+    assert.deepEqual(g.sectorJson.houses.find((x) => x.number === 501)!.pt, h.pt, 'the game runs on the new map');
     const after = await call('GET', '/admin/map');
     assert.equal(after.body.activeVersion.id, s2.body.id); assert.equal(after.body.review.scale, true);
     const list = await call('GET', '/admin/map/versions');
@@ -146,5 +147,5 @@ test('editor road edits: split a road into a new junction, connect two nodes, re
   assert.equal(deleteSel(b, { kind: 'road', id }), null);
   assert.deepEqual(checkBundle(b).filter((p) => p.level === 'error'), []);
   const net = buildNetwork(b.network, b.park);
-  assert.equal(net.gates.size, 6);
+  assert.equal(net.gates.size, 4);
 });

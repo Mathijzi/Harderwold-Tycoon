@@ -69,6 +69,7 @@ function App() {
     const { activeVersion, ...b } = m as MapBundle & { activeVersion: typeof active; reviewItems?: unknown };
     delete (b as { reviewItems?: unknown }).reviewItems;
     setDoc(b); setActive(activeVersion); setDirty(false); undo.current = []; redo.current = []; setDiag(null); setRoute(null);
+    const vp = b.park.viewPts; setView({ x: vp[0], y: vp[1], w: vp[2] - vp[0], h: vp[3] - vp[1] });
     const draft = store.lget(DRAFT);
     if (draft) setDraftOffer(draft);
   }, [api]);
@@ -188,7 +189,7 @@ function App() {
     if (!doc) return;
     setSel(s);
     const at = posOf(doc, s); if (!at) return;
-    const w = Math.min(view.w, 80);
+    const w = Math.min(view.w, 104 / doc.park.metersPerPt); // ~100 m wide
     setView({ x: at[0] - w / 2, y: at[1] - (w * view.h / view.w) / 2, w, h: w * view.h / view.w });
   };
   const doSearch = (e: React.FormEvent) => {

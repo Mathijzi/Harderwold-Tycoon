@@ -238,3 +238,12 @@ Alles hieronder komt mee en werkt na de kopie, maar is nog op Aelderholt ingeric
 4. **Golfbaan:** telt mee als speelgebied (opdrachten, golfkarren op de baan). Golfkarpaden horen in het wegennet van fase 1.
 5. **Cluster 600–655:** bestaand, deels geschakelde villa's (paren met een schuine streep).
 6. **Huisstijl:** kleuren doorgevoerd; volgens de website en het logo (alleen lokaal in `references/huisstijl/`, niet in git): donkerblauw `#1f2a38`, oranje accent `#cc7400`, woordmerk "Harderwold". Of het echte logo in beeld mag, is nog open.
+
+## 11. Stand na fase 1 (kaart, 15 oktober 2026)
+
+- De Aelderholt-placeholder is vervangen door de Harderwold-kaart uit de rasterplattegrond: pijplijn in `tools/harderwold/` (zie `docs/REFERENTIES_EN_AANNAMES.md`).
+- 339 woningen (283 villa's, 56 geschakeld in 11 blokken 600-655), ᴬ-varianten als 1000+nummer (`houseLabel`).
+- Een toegang: `gate-in`/`gate-out` op de ingangsweg bij het hart; dienstverkeer vanaf De werf via de dienstweg langs de zuidrand en de personeelsslagboom bij De loods; TD-golfkarren bij de trailerstalling.
+- Golfbaan (fairways, greens, bunkers), bos, losse bomen, grachten, paden en het parkeerterrein van het hart komen uit de plattegrond.
+- Projectie: bord, vlaggen, bloemperken, lantaarnweg en focusnamen staan nu in `park.json` (`decor`) in plaats van in de code.
+- Nog niet: Harderwold-villa's en gebouwen (fase 2), Harderwold-opdrachten en gasten (fase 3), golfkarren op de golfbaan en varende boten (fase 4), het echte logo (wacht op permissie).

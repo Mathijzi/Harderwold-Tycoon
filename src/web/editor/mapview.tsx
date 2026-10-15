@@ -56,7 +56,7 @@ export function MapView(p: Props) {
       e.preventDefault();
       const f = Math.exp(e.deltaY * 0.0015);
       const [mx, my] = toPt(e.clientX, e.clientY);
-      const w = Math.max(15, Math.min(900, vb.w * f)), s = w / vb.w;
+      const w = Math.max(20 / k, Math.min(1300 / k, vb.w * f)), s = w / vb.w; // 20 m .. 1.3 km wide
       p.setView({ x: mx - (mx - vb.x) * s, y: my - (my - vb.y) * s, w, h: vb.h * s });
     };
     el.addEventListener('wheel', onWheel, { passive: false });
@@ -137,12 +137,15 @@ export function MapView(p: Props) {
   const polyLayers: PolyLayer[] = ['water', 'footpaths', 'roadSurfaces', 'structures'];
   const polyFill: Record<PolyLayer, string> = { water: '#7fb6d8', footpaths: '#e2cfa3', roadSurfaces: '#b9bec2', structures: '#8d8f86' };
   const vp = doc.park.viewPts;
+  // the plan underlay covers the whole raster (park.json source.raster = [width, height] in points), else the view
+  const raster = (doc.park as { source?: { raster?: number[] } }).source?.raster;
+  const bg = raster ? [0, 0, raster[0], raster[1]] : vp;
 
   return (
     <svg ref={svg} className={`map tool-${p.tool}`} viewBox={`${vb.x} ${vb.y} ${vb.w} ${vb.h}`}
       onPointerDown={(e) => down(e, null)} onPointerMove={move} onPointerUp={up} onPointerLeave={() => p.onCursor(null)}>
       <rect x={vb.x} y={vb.y} width={vb.w} height={vb.h} fill="var(--map-bg)" />
-      {layers.pdf && <image href="/assets/editor_pdf.jpg" x={186} y={4} width={474} height={396} opacity={layers.pdfOpacity} preserveAspectRatio="none" />}
+      {layers.pdf && <image href="/assets/editor_pdf.jpg" x={bg[0]} y={bg[1]} width={bg[2] - bg[0]} height={bg[3] - bg[1]} opacity={layers.pdfOpacity} preserveAspectRatio="none" />}
       <rect x={vp[0]} y={vp[1]} width={vp[2] - vp[0]} height={vp[3] - vp[1]} fill="none" stroke="#888" strokeDasharray="4 3" vectorEffect="non-scaling-stroke" />
 
       {layers.terrain && polyLayers.map((L) => polys(doc, L).map((P, i) => {
