@@ -437,14 +437,17 @@ massing = {
         {'id': 'DR', 'name': 'Driving range', 'facilities': ['R'], 'corners': rect(1881, 1527, 2146, 1582), 'eaveM': 4.0, 'roof': 'white', 'style': 'modern'},
         {'id': 'WERF', 'name': 'De werf', 'facilities': ['I'], 'corners': rect(1355, 2914, 1485, 3086), 'eaveM': 5.0, 'pitchDeg': 22, 'ridge': 'v', 'style': 'workshop', 'sign': {'text': 'De werf'}},
         {'id': 'LOODS', 'name': 'De loods', 'facilities': ['M'], 'corners': rect(4609, 2987, 4736, 3055), 'eaveM': 4.5, 'pitchDeg': 20, 'ridge': 'u', 'style': 'workshop'},
-        {'id': 'APP1', 'name': 'Appartementen', 'facilities': ['N'], 'corners': rot_rect(3762, 2112, 430, 62, 45), 'eaveM': 7.5, 'roof': 'white', 'style': 'modern', 'rotationDeg': 45},
-        {'id': 'APP2', 'name': 'Appartementen', 'facilities': ['N'], 'corners': rot_rect(3762, 2112, 430, 62, -45), 'eaveM': 7.5, 'roof': 'white', 'style': 'modern', 'rotationDeg': -45},
     ],
 }
 structures = [
     {'kind': 'field', 'facilities': ['Q'], 'pts': rot_rect(3908, 2127, 88, 52, 0), 'heightM': 0, 'roof': 'none', 'name': 'Tennisbanen'},
     {'kind': 'field', 'facilities': ['R'], 'pts': rect(1883, 1300, 2140, 1520), 'heightM': 0, 'roof': 'none', 'name': 'Driving range'},
 ]
+# Residentie Harderwold (2): X-shaped apartment building, drawn by src/web/projector/apartments.ts after street-level
+# photos (white, stepped, roof terraces with columns, hedged gardens, dark brick entrance). Centre and arm length from the plan.
+apartments = {'id': 'APP', 'name': 'Residentie Harderwold', 'center': [3762, 2112], 'armPt': 215, 'widthPt': 62,
+              'anglesDeg': [45, 135, 225, 315], 'entranceArm': 1, 'sign': 'Harderwold', 'facilities': ['N']}
+
 lot = {
     'id': 'P-hart', 'name': 'Parkeerterrein bij het hart', 'origin': [1888.0, 1690.0], 'angleDeg': 0, 'lengthPt': 312, 'depthPt': 204, 'cornerPt': 8,
     'rows': [{'v0': 2, 'v1': 22, 'nose': -1}, {'v0': 48, 'v1': 68, 'nose': 1}, {'v0': 68, 'v1': 88, 'nose': -1},
@@ -476,7 +479,7 @@ park = {
     ],
     'terrain': {'water': water, 'footpaths': footpaths, 'roadSurfaces': big_paved, 'golf': golf, 'forest': forest},
     'structures': structures, 'facilities': facilities, 'houses': park_houses, 'parkingClusters': clusters, 'staticBarriers': [],
-    'massing': massing, 'parkingLot': lot, 'decor': decor,
+    'massing': massing, 'apartments': apartments, 'parkingLot': lot, 'decor': decor,
 }
 manifest = {
     'comment': 'Automatisch uit de rasterplattegrond (labels.py): huisnummers met positie, voor het kaartrapport in de editor.',

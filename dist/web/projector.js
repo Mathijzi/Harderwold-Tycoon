@@ -13483,7 +13483,7 @@ var init_updateQuadBounds = __esm({
 });
 
 // node_modules/pixi.js/lib/scene/sprite/Sprite.mjs
-var Sprite4;
+var Sprite5;
 var init_Sprite = __esm({
   "node_modules/pixi.js/lib/scene/sprite/Sprite.mjs"() {
     init_ObservablePoint();
@@ -13491,7 +13491,7 @@ var init_Sprite = __esm({
     init_updateQuadBounds();
     init_deprecation();
     init_ViewContainer();
-    Sprite4 = class _Sprite extends ViewContainer {
+    Sprite5 = class _Sprite extends ViewContainer {
       /**
        * @param options - The options for creating the sprite.
        */
@@ -13885,7 +13885,7 @@ var init_AlphaMask = __esm({
       }
       init(mask) {
         this.mask = mask;
-        this.renderMaskToTexture = !(mask instanceof Sprite4);
+        this.renderMaskToTexture = !(mask instanceof Sprite5);
         this.mask.renderable = this.renderMaskToTexture;
         this.mask.includeInBuild = !this.renderMaskToTexture;
         this.mask.measurable = false;
@@ -13911,7 +13911,7 @@ var init_AlphaMask = __esm({
         this.reset();
       }
       static test(mask) {
-        return mask instanceof Sprite4;
+        return mask instanceof Sprite5;
       }
     };
     AlphaMask.extension = ExtensionType.MaskEffect;
@@ -22967,7 +22967,7 @@ var init_AlphaMaskPipe = __esm({
     AlphaMaskEffect = class extends FilterEffect {
       constructor() {
         super();
-        this._placeholderSprite = new Sprite4(Texture.EMPTY);
+        this._placeholderSprite = new Sprite5(Texture.EMPTY);
         this.filters = [new MaskFilter({
           sprite: this._placeholderSprite,
           inverse: false,
@@ -43439,6 +43439,140 @@ function finish(h2, L, faces, W, D, topZ, _k, extra) {
   return { sprite, shadow };
 }
 
+// src/web/projector/apartments.ts
+var SIDING = (ctx2, w2, hh) => {
+  plaster(ctx2, w2, hh);
+  ctx2.fillStyle = "rgba(0,0,0,0.07)";
+  for (let y2 = 0.18; y2 < hh; y2 += 0.2) ctx2.fillRect(0, y2, w2, 0.03);
+};
+var HEDGE = (side, ctx2, w2, hh) => {
+  ctx2.fillStyle = side === "top" ? "#557f34" : "#41692a";
+  ctx2.fillRect(0, 0, w2, hh);
+  ctx2.fillStyle = "rgba(130,180,80,0.35)";
+  for (let x2 = 0.1; x2 < w2; x2 += 0.37) for (let y2 = 0.1; y2 < hh; y2 += 0.29) ctx2.fillRect(x2 + y2 * 7 % 0.2, y2, 0.16, 0.12);
+};
+function buildApartments(sp) {
+  const parts = [];
+  const H1 = 3.1, H2 = 3, H3 = 3, SL = 0.32;
+  const half = sp.widthM / 2, c0 = half;
+  const z1 = H1, z1s = z1 + SL, z2 = z1s + H2, z2s = z2 + SL, z3 = z2s + H3, z3s = z3 + SL;
+  const mk = (rotDeg) => frame({ number: 0, legendType: null, x: sp.center.x, y: sp.center.y, rot: rotDeg * Math.PI / 180, focus: false, scale: 1 });
+  {
+    const F = mk(sp.anglesDeg[0]);
+    F.box(-half, -half, half, half, 0, z1, (_s, ctx2, w2, hh) => plaster(ctx2, w2, hh));
+    F.box(-half, -half, half, half, z1, z1s, (s2, ctx2, w2, hh) => s2 === "top" ? gravelRoof(ctx2, w2, hh) : fascia(ctx2, w2, hh));
+    F.box(-half, -half, half, half, z1s, z2, (_s, ctx2, w2, hh) => {
+      SIDING(ctx2, w2, hh);
+      pane(ctx2, w2 * 0.3, 0.6, w2 * 0.4, 1.5, 3);
+    });
+    F.box(-half - 0.2, -half - 0.2, half + 0.2, half + 0.2, z2, z2s, (s2, ctx2, w2, hh) => s2 === "top" ? gravelRoof(ctx2, w2, hh) : fascia(ctx2, w2, hh));
+    F.box(-half + 1, -half + 1, half - 1, half - 1, z2s, z3, (_s, ctx2, w2, hh) => {
+      SIDING(ctx2, w2, hh);
+      pane(ctx2, w2 * 0.1, 0.5, w2 * 0.8, 1.7, 5, 0.1);
+    });
+    F.box(-half + 0.6, -half + 0.6, half - 0.6, half - 0.6, z3, z3s, (s2, ctx2, w2, hh) => s2 === "top" ? gravelRoof(ctx2, w2, hh) : fascia(ctx2, w2, hh));
+    const fp = [F.L(-half, -half), F.L(half, -half), F.L(half, half), F.L(-half, half)];
+    parts.push({ faces: F.faces, verts: [...fp, ...fp.map((p2) => ({ ...p2, z: z3s + 0.5 }))], fp: fp.map((p2) => ({ x: p2.x, y: p2.y })) });
+  }
+  sp.anglesDeg.forEach((ang, ai) => {
+    const F = mk(ang);
+    const s0 = c0, s1 = sp.armM, len = s1 - s0;
+    const terr = ai % 2 === 0 ? 1 : -1;
+    const a2 = terr > 0 ? [-half, half - 3.4] : [-half + 3.4, half];
+    const s3 = s0 + Math.min(16, len * 0.4);
+    for (const sd of [-1, 1]) {
+      const af = sd * (half + 3.2);
+      F.ground(sd > 0 ? half : af, s0, sd > 0 ? af : -half, s1, 0.02, (ctx2, w2, hh) => fillTex(ctx2, concreteTiles(), PPM * 0.6, w2, hh), -1e6);
+      F.box(af - 0.35, s0 + 2, af + 0.35, s1 - 0.5, 0, 1, HEDGE);
+      for (let s2 = s0 + 4.5; s2 < s1 - 1; s2 += 9) F.box(sd > 0 ? half : af, s2 - 0.3, sd > 0 ? af : -half, s2 + 0.3, 0, 1, HEDGE);
+    }
+    F.box(-half, s0, half, s1, 0, z1, (side, ctx2, w2, hh) => {
+      plaster(ctx2, w2, hh);
+      if (side === "left" || side === "right") for (let x2 = 1.6; x2 < w2 - 1.6; x2 += 4.5) {
+        pane(ctx2, x2, hh - 2.45, 1.7, 2.35, 2, 0.16);
+        pane(ctx2, x2 + 2.4, 0.7, 1, 1.2, 1, 0.08);
+      }
+      else for (let x2 = 2; x2 < w2 - 2; x2 += 4) pane(ctx2, x2, 0.8, 1.6, 1.3, 2);
+    });
+    F.box(-half - 0.25, s0, half + 0.25, s1 + 0.25, z1, z1s, (side, ctx2, w2, hh) => {
+      if (side !== "top") return fascia(ctx2, w2, hh);
+      gravelRoof(ctx2, w2, hh);
+      const tx = terr > 0 ? w2 - 3.65 : 0;
+      ctx2.save();
+      ctx2.beginPath();
+      ctx2.rect(tx, 0, 3.65, hh);
+      ctx2.clip();
+      fillTex(ctx2, concreteTiles(), PPM * 0.6, w2, hh);
+      ctx2.restore();
+    });
+    F.box(a2[0], s0, a2[1], s1, z1s, z2, (side, ctx2, w2, hh) => {
+      SIDING(ctx2, w2, hh);
+      const toTerr = side === "right" && terr > 0 || side === "left" && terr < 0;
+      if (side === "left" || side === "right") for (let x2 = 1.4; x2 < w2 - 1.6; x2 += 4.5) toTerr ? pane(ctx2, x2, hh - 2.35, 2.6, 2.25, 2, 0.15) : pane(ctx2, x2 + 0.6, 0.7, 1.2, 1.3, 1, 0.08);
+      else pane(ctx2, w2 * 0.3, 0.7, w2 * 0.4, 1.3, 2);
+    });
+    const ae = terr * (half - 0.15);
+    F.box(Math.min(ae, ae + terr * 0.06), s0 + 0.3, Math.max(ae, ae + terr * 0.06), s1, z1s, z1s + 1, (side, ctx2, w2, hh) => {
+      ctx2.fillStyle = side === "top" ? "#f2f2ee" : "rgba(200,220,228,0.55)";
+      ctx2.fillRect(0, 0, w2, hh);
+      ctx2.fillStyle = "#f2f2ee";
+      ctx2.fillRect(0, 0, w2, 0.08);
+    });
+    for (let s2 = s0 + 4.5; s2 < s1 - 0.5; s2 += 4.5) F.box(ae - 0.15 * terr - 0.15, s2 - 0.15, ae - 0.15 * terr + 0.15, s2 + 0.15, z1s, z2, (_s, ctx2, w2, hh) => {
+      ctx2.fillStyle = "#f7f7f3";
+      ctx2.fillRect(0, 0, w2, hh);
+    });
+    F.box(-half - 0.2, s0, half + 0.2, s1 + 0.3, z2, z2s, (side, ctx2, w2, hh) => side === "top" ? gravelRoof(ctx2, w2, hh) : fascia(ctx2, w2, hh));
+    F.box(-half + 1.2, s0, half - 4.6, s3, z2s, z3, (side, ctx2, w2, hh) => {
+      SIDING(ctx2, w2, hh);
+      if (side !== "top") for (let x2 = 1; x2 < w2 - 1.5; x2 += 3.2) pane(ctx2, x2, 0.6, 2.2, 1.7, 2, 0.1);
+    });
+    F.box(-half + 0.9, s0, half - 4.3, s3 + 0.3, z3, z3s, (side, ctx2, w2, hh) => side === "top" ? gravelRoof(ctx2, w2, hh) : fascia(ctx2, w2, hh));
+    if (ai === (sp.entranceArm ?? -1)) {
+      F.box(-half * 0.55, s1, half * 0.55, s1 + 3.2, 0, z1s + 0.4, (side, ctx2, w2, hh) => {
+        if (side === "top") {
+          ctx2.fillStyle = "#3a3c3f";
+          ctx2.fillRect(0, 0, w2, hh);
+          return;
+        }
+        fillTex(ctx2, brick(9), PPM, w2, hh);
+        ctx2.fillStyle = "rgba(25,25,28,0.55)";
+        ctx2.fillRect(0, 0, w2, hh);
+        if (side === "front") {
+          ctx2.fillStyle = "#4a5458";
+          ctx2.fillRect(w2 * 0.62, hh - 2.4, 1.3, 2.4);
+          ctx2.fillStyle = "#f2f2ee";
+          ctx2.textBaseline = "middle";
+          ctx2.textAlign = "left";
+          ctx2.font = "500 0.62px system-ui, Arial";
+          ctx2.fillText("Residentie", 0.5, hh * 0.32);
+          ctx2.font = "600 0.7px system-ui, Arial";
+          ctx2.fillText(sp.sign ?? "Harderwold", 0.5, hh * 0.32 + 0.75);
+        }
+      });
+    }
+    const verts = [];
+    for (const [a3, b2] of [[-half - 3.8, s0], [half + 3.8, s0], [-half - 3.8, s1 + 3.5], [half + 3.8, s1 + 3.5]]) {
+      verts.push(F.L(a3, b2, 0));
+      verts.push(F.L(a3, b2, z3s + 0.5));
+    }
+    parts.push({ faces: F.faces, verts, fp: [F.L(-half, s0), F.L(half, s0), F.L(half, s1), F.L(-half, s1)].map((p2) => ({ x: p2.x, y: p2.y })) });
+  });
+  const sprites = [];
+  const shadows = [];
+  parts.forEach((pt, i2) => {
+    for (const fc of pt.faces) if (fc.key === void 0 || Number.isNaN(fc.key)) fc.key = 0;
+    pt.faces.sort((a2, b2) => a2.key - b2.key);
+    const bb = screenBounds(pt.verts, 8);
+    const c2 = renderFaces(pt.faces, bb);
+    const front = Math.max(...pt.fp.map((p2) => p2.y));
+    const ctr = pt.fp.reduce((q, p2) => ({ x: q.x + p2.x / pt.fp.length, y: q.y + p2.y / pt.fp.length }), { x: 0, y: 0 });
+    sprites.push({ canvas: c2, x: bb.x0, y: bb.y0, key: front * cam.CE, kind: "building", id: `${sp.id}${i2}`, anchor: P(ctr.x, ctr.y, z3s + 1.5), topZ: z3s, footprint: pt.fp });
+    shadows.push(hull([...pt.fp, ...pt.fp.map((p2) => shadowPt({ ...p2, z: i2 === 0 ? z3s : z2s }))]));
+  });
+  return { sprites, shadows, footprints: parts.map((p2) => p2.fp) };
+}
+
 // src/web/projector/brand.ts
 var BRAND = {
   teal: "#1f2a38",
@@ -48280,14 +48414,14 @@ var WeatherFx = class {
   constructor() {
     const W = cam.W, H2 = cam.H, k2 = cam.RS;
     this.clouds = new TilingSprite({ texture: Texture.from(cloudTile(Math.round(1400 * k2), 5)), width: W, height: H2 });
-    this.tint = new Sprite4(Texture.WHITE);
+    this.tint = new Sprite5(Texture.WHITE);
     this.tint.width = W;
     this.tint.height = H2;
     this.tint.tint = 1845818;
     this.fog = new TilingSprite({ texture: Texture.from(cloudTile(Math.round(1100 * k2), 9, true)), width: W, height: H2 });
     this.rainA = new TilingSprite({ texture: Texture.from(rainTile(Math.round(512 * k2), 3, 160, 26 * k2)), width: W, height: H2 });
     this.rainB = new TilingSprite({ texture: Texture.from(rainTile(Math.round(384 * k2), 7, 90, 40 * k2)), width: W, height: H2 });
-    this.flash = new Sprite4(Texture.WHITE);
+    this.flash = new Sprite5(Texture.WHITE);
     this.flash.width = W;
     this.flash.height = H2;
     this.flash.tint = 15266047;
@@ -48400,7 +48534,7 @@ var PixiStage = class {
     cv.id = "pixi";
     cv.style.cssText = "position:absolute;inset:0;width:3840px;height:2160px;";
     host.insertBefore(cv, before);
-    const g2 = new Sprite4(Texture.from(ground2));
+    const g2 = new Sprite5(Texture.from(ground2));
     this.app.stage.addChild(g2);
     this.world.sortableChildren = true;
     this.app.stage.addChild(this.world);
@@ -48427,7 +48561,7 @@ var PixiStage = class {
     mk(waveTile(3, tileSize, 120, "215,240,240"), 0.55, 5 * cam.RS, 1.6 * cam.RS, 0.62);
     mk(waveTile(9, Math.round(tileSize * 0.75), 90, "190,225,230"), 0.45, -3.5 * cam.RS, 2.4 * cam.RS, 0.55);
     mk(glintTile(17, tileSize), 0.9, 2 * cam.RS, -1 * cam.RS, 0.7, 1);
-    const m2 = new Sprite4(Texture.from(mask.canvas));
+    const m2 = new Sprite5(Texture.from(mask.canvas));
     layer.addChild(m2);
     layer.mask = m2;
     this.app.stage.addChildAt(layer, 1);
@@ -48530,7 +48664,7 @@ var PixiStage = class {
       const k2 = o2.id ?? o2;
       let e2 = this.entries.get(k2);
       if (!e2) {
-        e2 = { sp: new Sprite4(), seen: 0 };
+        e2 = { sp: new Sprite5(), seen: 0 };
         if (o2.img) {
           e2.sp.texture = this.texOf(o2.img.canvas);
           e2.sp.position.set(o2.img.x, o2.img.y);
@@ -49078,6 +49212,21 @@ async function buildScene() {
     dynamicSprites.push(r2.sprite);
     shadows.push(r2.shadow);
   });
+  const aptFoot = [];
+  if (sector.apartments) {
+    const a2 = sector.apartments, k3 = sector.metersPerPt;
+    const r2 = buildApartments({ id: a2.id, name: a2.name, center: W(a2.center), armM: a2.armPt * k3, widthM: a2.widthPt * k3, anglesDeg: a2.anglesDeg, entranceArm: a2.entranceArm, sign: a2.sign });
+    dynamicSprites.push(...r2.sprites);
+    shadows.push(...r2.shadows);
+    aptFoot.push(...r2.footprints);
+  }
+  const grow = (poly2, d2) => {
+    const c2 = poly2.reduce((q, p2) => ({ x: q.x + p2.x / poly2.length, y: q.y + p2.y / poly2.length }), { x: 0, y: 0 });
+    return poly2.map((p2) => {
+      const dx = p2.x - c2.x, dy = p2.y - c2.y, l2 = Math.hypot(dx, dy) || 1;
+      return { x: p2.x + dx / l2 * d2 * 1.42, y: p2.y + dy / l2 * d2 * 1.42 };
+    });
+  };
   if (sector.massing?.tent) {
     const t2 = buildTent(sector.massing.tent.pts.map(W));
     dynamicSprites.push(t2.sprite);
@@ -49258,6 +49407,10 @@ async function buildScene() {
   }
   for (const sp of sandPaths) mask.line(sp, 3);
   for (const s2 of sector.structures) if (s2.kind === "field") mask.poly(s2.pts.map(W), 2.5);
+  for (const f2 of aptFoot) {
+    mask.poly(grow(f2, 4.5));
+    mask.poly(f2.map((p2) => ({ x: p2.x, y: p2.y + 9 })), 3);
+  }
   for (const b2 of blocks) {
     mask.poly(blockCorners(b2, 2.5));
     mask.poly(blockCorners(b2, 0).map((p2) => ({ x: p2.x, y: p2.y + 9 })), 3);
@@ -49293,6 +49446,7 @@ async function buildScene() {
   for (const sp of sandPaths) hard.line(sp, 2);
   for (const s2 of sector.structures) if (s2.kind === "field") hard.poly(s2.pts.map(W), 1.5);
   for (const b2 of blocks) hard.poly(blockCorners(b2, 1.5));
+  for (const f2 of aptFoot) hard.poly(grow(f2, 4));
   for (const t2 of paved) hard.poly(t2.pts, 1);
   for (const w2 of sector.terrain.water) hard.poly(w2.map(W), 0.5);
   for (const f2 of sector.terrain.footpaths) hard.poly(f2.map(W), 0.6);
@@ -49401,13 +49555,14 @@ async function buildScene() {
   }
   for (const c2 of staticCars) statics.push({ key: c2.y * cam.CE, at: { x: c2.x, y: c2.y }, box: [3.2, 2.4], draw: (ctx2, tt) => drawVehicle(ctx2, c2, tt) });
   for (const [id, h2] of houseFoot) lightSrc.houses.set(id, h2.pos);
+  for (const f2 of aptFoot) lightSrc.buildings.push(f2.reduce((q, p2) => ({ x: q.x + p2.x / f2.length, y: q.y + p2.y / f2.length }), { x: 0, y: 0 }));
   for (const b2 of blocks) {
     const c2 = blockCorners(b2, 0);
     lightSrc.buildings.push({ x: c2.reduce((a2, p2) => a2 + p2.x, 0) / c2.length, y: c2.reduce((a2, p2) => a2 + p2.y, 0) / c2.length });
   }
   if (qs2.get("life") !== "0") {
     const foot = [...houseFoot.values()];
-    const bc = blocks.map((b2) => blockCorners(b2, 1)).filter((c2) => !!c2);
+    const bc = [...blocks.map((b2) => blockCorners(b2, 1)).filter((c2) => !!c2), ...aptFoot.map((f2) => grow(f2, 3.5))];
     ambient = new Ambient({
       water: sector.terrain.water.map((w2) => w2.map(W)),
       roads: net.roads,

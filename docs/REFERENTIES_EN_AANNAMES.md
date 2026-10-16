@@ -140,5 +140,13 @@ Stijl volgens `references/fotos`. Varianten worden vast per huisnummer gekozen.
 - Voor de vrije-ruimtecontrole is de woning smaller dan getekend, zodat de simulatie de woningen niet uit elkaar duwt.
 
 **Overige gebouwen**
-- **Hart, driving range en appartementen:** moderne stijl. Witte gevels met verdiepingshoge zwarte puien en strookramen boven, een licht plat dak met witte rand, en zonnepanelen op grote daken.
+- **Residentie Harderwold (appartementen, 2):** eigen bouwer `src/web/projector/apartments.ts`, naar streetview-foto's die de opdrachtgever aanleverde (16-10-2026).
+  - Wit en getrapt opgebouwd:
+    - op de begane grond Franse deuren en per appartement een tuin met lage hagen;
+    - de eerste verdieping is aan één kant teruggezet, met een dakterras achter een glazen balustrade en een witte overstek op slanke witte kolommen;
+    - rond de kruising een derde laag.
+  - De gevels boven zijn van wit horizontaal rabat, met donkere kozijnen.
+  - Aan het eind van een vleugel staat een entreeblok van donkere steen met "Residentie Harderwold".
+  - Het midden en de armlengte komen uit de plattegrond (`apartments` in `park.json`). Het gebouw bestaat uit vijf delen (midden en vier armen), zodat de dieptevolgorde klopt.
+- **Hart en driving range:** moderne stijl. Witte gevels met verdiepingshoge zwarte puien en strookramen boven, een licht plat dak met witte rand, en zonnepanelen op grote daken.
 - **De werf en De loods:** houden een werkplaatsdak.

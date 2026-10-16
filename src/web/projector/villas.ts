@@ -23,7 +23,7 @@ function quad(p00: V3, p10: V3, p01: V3, out: V3, paint: (ctx: CanvasRenderingCo
 }
 
 /** shared local frame: a = to the right (seen from the street), b = towards the street, z up */
-function frame(h: VillaSpec) {
+export function frame(h: VillaSpec) {
   const f: V2 = { x: Math.cos(h.rot), y: Math.sin(h.rot) };
   const r: V2 = { x: -f.y, y: f.x };
   const k = h.scale ?? 1;
@@ -49,18 +49,18 @@ function frame(h: VillaSpec) {
 }
 
 /** white plaster wall: faint vertical gradient and a dark plinth line */
-function plaster(ctx: CanvasRenderingContext2D, w: number, hh: number) {
+export function plaster(ctx: CanvasRenderingContext2D, w: number, hh: number) {
   const g = ctx.createLinearGradient(0, 0, 0, hh); g.addColorStop(0, WHITE); g.addColorStop(1, WHITE_SHADE);
   ctx.fillStyle = g; ctx.fillRect(0, 0, w, hh);
   ctx.fillStyle = 'rgba(40,40,40,0.35)'; ctx.fillRect(0, hh - 0.08, w, 0.08);
 }
 /** black-framed glass, a door leaf or a fixed panel */
-function pane(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, mullions: number, warm = 0.12) {
+export function pane(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, mullions: number, warm = 0.12) {
   glass(ctx, x, y, w, h, mullions, warm);
   ctx.strokeStyle = FRAME; ctx.lineWidth = 0.1; ctx.strokeRect(x, y, w, h);
 }
 /** a slab edge: thick white fascia with a thin shadow line underneath */
-function fascia(ctx: CanvasRenderingContext2D, w: number, hh: number) {
+export function fascia(ctx: CanvasRenderingContext2D, w: number, hh: number) {
   ctx.fillStyle = '#fbfbf8'; ctx.fillRect(0, 0, w, hh);
   ctx.fillStyle = 'rgba(0,0,0,0.18)'; ctx.fillRect(0, hh - 0.05, w, 0.05);
 }
@@ -76,7 +76,7 @@ function solarRoof(ctx: CanvasRenderingContext2D, w: number, hh: number, rows: n
     ctx.fillStyle = pat; ctx.fillRect(x, y, pw - 0.05, ph);
   }
 }
-function gravelRoof(ctx: CanvasRenderingContext2D, w: number, hh: number) {
+export function gravelRoof(ctx: CanvasRenderingContext2D, w: number, hh: number) {
   ctx.fillStyle = '#d6d6d1'; ctx.fillRect(0, 0, w, hh);
   ctx.strokeStyle = '#c2c2bc'; ctx.lineWidth = 0.12; ctx.strokeRect(0.25, 0.25, w - 0.5, hh - 0.5);
 }

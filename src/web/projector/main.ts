@@ -3,6 +3,7 @@ import { buildNetwork, Network, NetworkJson, SectorJson, HouseInfo } from '../..
 import { cam, setupCamera, P, Pv, STAGE, V2, hrand, mkCanvas, reduceCanvas } from './proj.ts';
 import { buildHouse, Sprite } from './houses.ts';
 import { buildVilla, buildTerraced } from './villas.ts';
+import { buildApartments } from './apartments.ts';
 import { houseSize, isVilla, isTerraced } from '../../shared/house.ts';
 import { buildKiosk, drawSign, drawFlag, drawLamp, drawIntercom, drawCharger, drawStaffSign, Structure } from './buildings.ts';
 import { Massing, massingBlocks, buildBlock, buildTent, blockCorners, terraceFor, drawParasol, drawBollard, Block } from './complex.ts';
@@ -49,7 +50,8 @@ let net: Network;
 /** loose decor from park.json (map-specific positions in PDF points) */
 interface Decor { sign?: number[]; flags?: number[][]; flowerBeds?: number[][]; lampRoad?: string; staffRoad?: string; focus?: Record<string, string>; trees?: number[][] }
 interface Golf { fairways: number[][][]; greens: number[][][]; bunkers: number[][][] }
-let sector: SectorJson & { terrain: { water: number[][][]; footpaths: number[][][]; roadSurfaces: number[][][]; golf?: Golf; forest?: number[][][] }; structures: Structure[]; facilities: { key: string; name: string; pt: number[] }[]; massing?: Massing; decor?: Decor };
+let sector: SectorJson & { terrain: { water: number[][][]; footpaths: number[][][]; roadSurfaces: number[][][]; golf?: Golf; forest?: number[][][] }; structures: Structure[]; facilities: { key: string; name: string; pt: number[] }[]; massing?: Massing; decor?: Decor;
+  apartments?: { id: string; name: string; center: number[]; armPt: number; widthPt: number; anglesDeg: number[]; entranceArm?: number; sign?: string } };
 const frames: Frame[] = [];
 let state: StateMsg | null = null;
 let rate = 1;
@@ -186,6 +188,14 @@ async function buildScene() {
   // central complex + TD workshop + tent from the editable massing data
   const blocks: Block[] = sector.massing ? massingBlocks(sector.massing, W) : [];
   blocks.forEach((b, i) => { const r = buildBlock(b, blocks, 40 + i); dynamicSprites.push(r.sprite); shadows.push(r.shadow); });
+  // Residentie Harderwold (own builder: stepped white wings, terraces, hedged gardens); footprints also keep trees away
+  const aptFoot: V2[][] = [];
+  if (sector.apartments) {
+    const a = sector.apartments, k = sector.metersPerPt;
+    const r = buildApartments({ id: a.id, name: a.name, center: W(a.center), armM: a.armPt * k, widthM: a.widthPt * k, anglesDeg: a.anglesDeg, entranceArm: a.entranceArm, sign: a.sign });
+    dynamicSprites.push(...r.sprites); shadows.push(...r.shadows); aptFoot.push(...r.footprints);
+  }
+  const grow = (poly: V2[], d: number) => { const c = poly.reduce((q, p) => ({ x: q.x + p.x / poly.length, y: q.y + p.y / poly.length }), { x: 0, y: 0 }); return poly.map((p) => { const dx = p.x - c.x, dy = p.y - c.y, l = Math.hypot(dx, dy) || 1; return { x: p.x + (dx / l) * d * 1.42, y: p.y + (dy / l) * d * 1.42 }; }); };
   if (sector.massing?.tent) { const t = buildTent(sector.massing.tent.pts.map(W)); dynamicSprites.push(t.sprite); shadows.push(t.shadow); }
   const waterW = sector.terrain.water.map((w) => w.map(W));
   const lanes = [...net.edges.values()].filter((e) => e.kind !== 'driveway' && e.kind !== 'reverse');
@@ -334,6 +344,7 @@ async function buildScene() {
   for (const h of net.houses) if (h.stallId) { const st = net.stalls.get(h.stallId)!; mask.line([h.door, { x: st.parkedPose.x, y: st.parkedPose.y }], 3.2); }
   for (const sp of sandPaths) mask.line(sp, 3.0);
   for (const s of sector.structures) if (s.kind === 'field') mask.poly(s.pts.map(W), 2.5);
+  for (const f of aptFoot) { mask.poly(grow(f, 4.5)); mask.poly(f.map((p) => ({ x: p.x, y: p.y + 9 })), 3); }
   for (const b of blocks) {
     mask.poly(blockCorners(b, 2.5));
     // keep the camera-facing facades free of tree crowns
@@ -367,6 +378,7 @@ async function buildScene() {
   for (const sp of sandPaths) hard.line(sp, 2.0);
   for (const s2 of sector.structures) if (s2.kind === 'field') hard.poly(s2.pts.map(W), 1.5);
   for (const b of blocks) hard.poly(blockCorners(b, 1.5));
+  for (const f of aptFoot) hard.poly(grow(f, 4));
   for (const t of paved) hard.poly(t.pts, 1);
   for (const w of sector.terrain.water) hard.poly(w.map(W), 0.5);
   for (const f of sector.terrain.footpaths) hard.poly(f.map(W), 0.6);
@@ -451,10 +463,11 @@ async function buildScene() {
   }
   for (const c of staticCars) statics.push({ key: c.y * cam.CE, at: { x: c.x, y: c.y }, box: [3.2, 2.4], draw: (ctx, tt) => drawVehicle(ctx, c, tt) });
   for (const [id, h] of houseFoot) lightSrc.houses.set(id, h.pos);
+  for (const f of aptFoot) lightSrc.buildings.push(f.reduce((q, p) => ({ x: q.x + p.x / f.length, y: q.y + p.y / f.length }), { x: 0, y: 0 }));
   for (const b of blocks) { const c = blockCorners(b, 0); lightSrc.buildings.push({ x: c.reduce((a, p) => a + p.x, 0) / c.length, y: c.reduce((a, p) => a + p.y, 0) / c.length }); }
   if (qs.get('life') !== '0') {
     const foot = [...houseFoot.values()];
-    const bc = blocks.map((b) => blockCorners(b, 1.0)).filter((c): c is V2[] => !!c);
+    const bc = [...blocks.map((b) => blockCorners(b, 1.0)).filter((c): c is V2[] => !!c), ...aptFoot.map((f) => grow(f, 3.5))];
     ambient = new Ambient({
       water: sector.terrain.water.map((w) => w.map(W)), roads: net.roads,
       facilities: sector.facilities.map((f) => ({ key: f.key, pos: W(f.pt) })),
