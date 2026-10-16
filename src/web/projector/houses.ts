@@ -1,5 +1,5 @@
-// Parametric bungalow sprites (overgenomen uit de basis: zadeldak-bungalows). Worden in fase 2 vervangen door
-// Harderwold-villa's (wit, plat dak, glaspuien, terras, zwembad, steiger).
+// Parametric bungalow sprites (zadeldak-bungalows uit de basis). Voor Harderwold zijn ze vervangen door villas.ts;
+// deze bouwer blijft de terugval voor huistypen zonder villa- of rijwoningstijl.
 import { V3, V2, P, Pv, Face, makeFace, drawFace, fillTex, mkCanvas, renderFaces, screenBounds, hrand, shadowPt, add3, mul3, sub3, cross3, norm3, dot3, facing, cam } from './proj.ts';
 import { brick, timber, roofTiles, solar, concreteTiles, PPM } from './textures.ts';
 

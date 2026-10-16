@@ -1,7 +1,9 @@
 // Projector (display only). Fixed 3840x2160 composition, server-authoritative state via SSE.
 import { buildNetwork, Network, NetworkJson, SectorJson, HouseInfo } from '../../sim/network.ts';
 import { cam, setupCamera, P, Pv, STAGE, V2, hrand, mkCanvas, reduceCanvas } from './proj.ts';
-import { buildHouse, Sprite, variantFor } from './houses.ts';
+import { buildHouse, Sprite } from './houses.ts';
+import { buildVilla, buildTerraced } from './villas.ts';
+import { houseSize, isVilla, isTerraced } from '../../shared/house.ts';
 import { buildKiosk, drawSign, drawFlag, drawLamp, drawIntercom, drawCharger, drawStaffSign, Structure } from './buildings.ts';
 import { Massing, massingBlocks, buildBlock, buildTent, blockCorners, terraceFor, drawParasol, drawBollard, Block } from './complex.ts';
 import { pointInPolygon } from '../../shared/geom.ts';
@@ -158,12 +160,24 @@ async function buildScene() {
   // houses (all PDF houses in the sector)
   const houseFoot = new Map<string, { pos: V2; rad: number }>();
   let built = 0;
+  // water behind a villa (canal): distance from the house centre backwards to the water edge, for the jetty
+  const waterMask = new Mask(net.bounds.w, net.bounds.h);
+  for (const w of sector.terrain.water) waterMask.poly(w.map(W));
+  waterMask.freeze();
+  const unitW = new Map(sector.houses.map((x) => [x.number, (x as { footprintPts?: number }).footprintPts ? (x as { footprintPts?: number }).footprintPts! * sector.metersPerPt : undefined]));
+  const waterBehind = (h: HouseInfo) => {
+    for (let d = 3; d <= 24; d += 0.5) { const x = h.pos.x - h.front.x * d, y = h.pos.y - h.front.y * d; if (x > 0 && y > 0 && x < net.bounds.w && y < net.bounds.h && waterMask.blocked(x, y)) return d / (h.scale ?? 1); }
+    return undefined;
+  };
   for (const h of net.houses) {
     if (++built % 40 === 0) await pause();
-    const v0 = variantFor(h.legendType, h.number);
-    houseFoot.set(h.id, { pos: h.pos, rad: (Math.max(v0.W + (v0.annex ? 3 : 0), v0.D) / 2 + 4.2) * (h.scale ?? 1) });
+    const sz = houseSize(h.legendType, unitW.get(h.number), h.number);
+    houseFoot.set(h.id, { pos: h.pos, rad: (Math.max(sz.W + (sz.annex ? 3 : 0), sz.D) / 2 + 4.2) * (h.scale ?? 1) });
     if (!inView(h.pos.x, h.pos.y, 40)) { houseAnchor.set(h.id, P(h.pos.x, h.pos.y, 9)); continue; } // close-up: off-screen
-    const b = buildHouse({ number: h.number, legendType: h.legendType, x: h.pos.x, y: h.pos.y, rot: h.rotation, focus: h.focus, scale: h.scale });
+    const spec = { number: h.number, legendType: h.legendType, x: h.pos.x, y: h.pos.y, rot: h.rotation, focus: h.focus, scale: h.scale };
+    const b = isVilla(h.legendType) ? buildVilla({ ...spec, waterBack: waterBehind(h) })
+      : isTerraced(h.legendType) ? buildTerraced({ ...spec, unitW: unitW.get(h.number) })
+      : buildHouse(spec);
     dynamicSprites.push(b.sprite);
     shadows.push(b.shadow);
     houseAnchor.set(h.id, b.sprite.anchor);

@@ -247,3 +247,12 @@ Alles hieronder komt mee en werkt na de kopie, maar is nog op Aelderholt ingeric
 - Golfbaan (fairways, greens, bunkers), bos, losse bomen, grachten, paden en het parkeerterrein van het hart komen uit de plattegrond.
 - Projectie: bord, vlaggen, bloemperken, lantaarnweg en focusnamen staan nu in `park.json` (`decor`) in plaats van in de code.
 - Nog niet: Harderwold-villa's en gebouwen (fase 2), Harderwold-opdrachten en gasten (fase 3), golfkarren op de golfbaan en varende boten (fase 4), het echte logo (wacht op permissie).
+
+## 12. Stand na fase 2 (villa's, 16 oktober 2026)
+
+- Nieuwe renderer `src/web/projector/villas.ts`:
+  - villa's: wit, plat dak, overstek, glaspuien, balkon, terras, zwembad, steiger met kano, zonnepanelen;
+  - geschakelde rijwoningen.
+- Maten gedeeld met de simulatie via `src/shared/house.ts`.
+- Moderne gevelstijl (`style: 'modern'`, `roof: 'white'`) in `complex.ts` voor het hart, de driving range en de appartementen.
+- Beeld volgens de opdrachtgever: ingezoomd op het park, kijkhoek zoals Aelderholt (zie docs).

@@ -4,14 +4,14 @@
 // Walls that touch a neighbouring wing are suppressed (or only drawn above the neighbour's eaves),
 // so the complex reads as one coherent building without holes, stacked roofs or phantom terraces.
 import { V3, V2, P, Pv, makeFace, drawFace, fillTex, mkCanvas, renderFaces, screenBounds, cam, shadowPt, facing, Face, cross3, norm3, hrand } from './proj.ts';
-import { timber, brick, PPM } from './textures.ts';
+import { timber, brick, solar, PPM } from './textures.ts';
 import { glass, hull, Sprite } from './houses.ts';
 import { emblem } from './vehicles.ts';
 import { BRAND } from './brand.ts';
 
 export interface WingDef {
   id: string; name: string; facilities: string[]; corners: number[][]; eaveM: number; pitchDeg?: number;
-  ridge?: 'u' | 'v'; split?: number; roof?: 'green'; style: 'hall' | 'pool' | 'link' | 'shop' | 'brasserie' | 'workshop';
+  ridge?: 'u' | 'v'; split?: number; roof?: 'green' | 'white'; style: 'hall' | 'pool' | 'link' | 'shop' | 'brasserie' | 'workshop' | 'modern';
   sign?: { text: string; sub?: string }; terrace?: boolean; rotationDeg?: number;
 }
 export interface Massing { rotationDeg: number; wings: WingDef[]; tent?: { id: string; name: string; pts: number[][] }; serviceYard?: { pts: number[][]; bollards: number[][] } }
@@ -38,7 +38,7 @@ export function massingBlocks(m: Massing, toWorld: (p: number[]) => V2): Block[]
     for (let k = 0; k < parts; k++) {
       const cu = u0 + du * (k + 0.5), cv = (v0 + v1) / 2;
       const hu = du / 2, hv = (v1 - v0) / 2;
-      const ridge = w.roof === 'green' ? 'flat' : (w.ridge ?? (hu >= hv ? 'u' : 'v'));
+      const ridge = w.roof === 'green' || w.roof === 'white' ? 'flat' : (w.ridge ?? (hu >= hv ? 'u' : 'v'));
       const span = ridge === 'u' ? hv : hu;
       const rise = ridge === 'flat' ? 0 : Math.tan(((w.pitchDeg ?? 30) * Math.PI) / 180) * span;
       out.push({ id: parts > 1 ? `${w.id}${k + 1}` : w.id, wing: w, c: { x: U.x * cu + V.x * cv, y: U.y * cu + V.y * cv }, U, V, hu, hv, eave: w.eaveM, rise, ridge, part: k, parts });
@@ -88,6 +88,21 @@ function greenRoof(ctx: CanvasRenderingContext2D, w: number, h: number, seed: nu
   ctx.fillStyle = '#b9b3a4'; ctx.fillRect(0.35, 0.35, w - 0.7, 0.25); // gravel strip
 }
 
+/** light gravel roof with a white parapet (Harderwold architecture) */
+function whiteRoof(ctx: CanvasRenderingContext2D, w: number, h: number) {
+  ctx.fillStyle = '#d7d7d2'; ctx.fillRect(-1, -1, w + 2, h + 2);
+  ctx.strokeStyle = '#f6f6f2'; ctx.lineWidth = 0.6; ctx.strokeRect(0.3, 0.3, w - 0.6, h - 0.6);
+  ctx.strokeStyle = 'rgba(0,0,0,0.12)'; ctx.lineWidth = 0.08; ctx.strokeRect(0.62, 0.62, w - 1.24, h - 1.24);
+  // large roofs carry rows of solar panels (as on the villas), with a maintenance strip around them
+  if (w > 14 && h > 14) {
+    const pat = ctx.createPattern(solar(), 'repeat')!;
+    for (let y = 2.2; y + 1.8 < h - 2; y += 2.6) for (let x = 2.2; x + 1.05 < w - 2; x += 1.1) {
+      pat.setTransform(new DOMMatrix([1 / (2 * PPM), 0, 0, 1.75 / (2 * PPM), x, y]));
+      ctx.fillStyle = pat; ctx.fillRect(x, y, 1.05, 1.75);
+    }
+  }
+}
+
 type WallKind = 'eave' | 'gable';
 interface WallCtx { b: Block; kind: WallKind; w: number; zTop: number; zEave: number; zBase: number; side: 'S' | 'N' | 'E' | 'W'; seed: number; sign?: WingDef['sign'] }
 
@@ -98,6 +113,7 @@ function paintWall(ctx: CanvasRenderingContext2D, k: WallCtx) {
   const H = zEave - zBase;  // visible rectangular wall height
   const y0 = tri;           // face-space v of the eave line
   const dark = timber(20 + (k.seed % 4), 0), warm = timber(30 + (k.seed % 3), 1);
+  if (st === 'modern') { paintModern(ctx, k); return; }
   // base cladding
   if (st === 'workshop') fillTex(ctx, warm, PPM, w, zTop + 1); else fillTex(ctx, dark, PPM, w, zTop + 1);
   if (kind === 'gable' && st !== 'workshop') {
@@ -160,6 +176,29 @@ function paintWall(ctx: CanvasRenderingContext2D, k: WallCtx) {
   }
 }
 
+/** Harderwold style: white plaster, storey-high black-framed glazing on the ground floor, ribbon windows above,
+ *  a white slab line between the floors; sign as dark lettering band. */
+function paintModern(ctx: CanvasRenderingContext2D, k: WallCtx) {
+  const { w, zTop, zEave, zBase } = k;
+  const H = zEave - zBase, vb = zTop - zBase;
+  const g = ctx.createLinearGradient(0, 0, 0, vb); g.addColorStop(0, '#f4f4f0'); g.addColorStop(1, '#e2e2dc');
+  ctx.fillStyle = g; ctx.fillRect(-1, -1, w + 2, vb + 2);
+  if (H > 1.2 && zBase < 0.3) {
+    const gH = Math.min(3.0, H - 0.5), gTop = vb - gH - 0.1;
+    bays(ctx, w, gTop, gH, 3.2, (x, bw) => { if (bw > 1.4) { glass(ctx, x + 0.2, gTop, bw - 0.4, gH, 2, 0.28); ctx.strokeStyle = '#1c1e21'; ctx.lineWidth = 0.12; ctx.strokeRect(x + 0.2, gTop, bw - 0.4, gH); } });
+    if (H > 5) {
+      ctx.fillStyle = '#fbfbf8'; ctx.fillRect(-1, gTop - 0.55, w + 2, 0.4); // floor slab edge
+      for (let y = gTop - 0.75; y > 1.4; y -= 3.1) bays(ctx, w, 0, 0, 3.2, (x, bw) => { if (bw > 1.4) { glass(ctx, x + 0.35, y - 1.5, bw - 0.7, 1.5, 2, 0.1); } });
+    }
+  }
+  ctx.fillStyle = 'rgba(40,40,40,0.35)'; ctx.fillRect(-1, vb - 0.08, w + 2, 0.08);
+  if (k.sign) {
+    ctx.fillStyle = '#1f2a38'; ctx.textBaseline = 'middle'; ctx.textAlign = 'left';
+    ctx.font = '600 0.9px system-ui, Arial'; ctx.fillText(k.sign.text, 0.8, 0.75);
+    if (k.sign.sub) { ctx.font = '500 0.38px system-ui, Arial'; ctx.fillText(k.sign.sub, 0.85, 1.4); }
+  }
+}
+
 /** Build one block as a sprite. `others` are the other blocks of the massing (for shared-wall suppression). */
 export function buildBlock(b: Block, others: Block[], seed: number): { sprite: Sprite; shadow: V2[]; footprint: V2[] } {
   const faces: Face[] = [];
@@ -206,9 +245,9 @@ export function buildBlock(b: Block, others: Block[], seed: number): { sprite: S
     const corners = blockCorners(b, 0.15);
     const o3: V3 = { ...corners[0], z: b.eave };
     const W2 = 2 * (b.hu + 0.15), H2 = 2 * (b.hv + 0.15);
-    roofFaces.push(makeFace(o3, U3, V3v, [{ x: 0, y: 0 }, { x: W2, y: 0 }, { x: W2, y: H2 }, { x: 0, y: H2 }], (ctx) => greenRoof(ctx, W2, H2, seed), { ambient: 0.72 }));
+    roofFaces.push(makeFace(o3, U3, V3v, [{ x: 0, y: 0 }, { x: W2, y: 0 }, { x: W2, y: H2 }, { x: 0, y: H2 }], (ctx) => (b.wing.roof === 'white' ? whiteRoof(ctx, W2, H2) : greenRoof(ctx, W2, H2, seed)), { ambient: 0.72 }));
     // parapet front edge
-    roofFaces.push(makeFace({ ...corners[3], z: b.eave + 0.3 }, U3, { x: 0, y: 0, z: -1 }, [{ x: 0, y: 0 }, { x: W2, y: 0 }, { x: W2, y: 0.32 }, { x: 0, y: 0.32 }], (ctx) => { ctx.fillStyle = DARK; ctx.fillRect(0, 0, W2, 1); }, { noShade: true }));
+    roofFaces.push(makeFace({ ...corners[3], z: b.eave + 0.3 }, U3, { x: 0, y: 0, z: -1 }, [{ x: 0, y: 0 }, { x: W2, y: 0 }, { x: W2, y: 0.32 }, { x: 0, y: 0.32 }], (ctx) => { ctx.fillStyle = b.wing.roof === 'white' ? '#f6f6f2' : DARK; ctx.fillRect(0, 0, W2, 1); }, { noShade: true }));
   } else {
     const along = b.ridge === 'u' ? U3 : V3v, across = b.ridge === 'u' ? V3v : U3;
     const halfAlong = (b.ridge === 'u' ? b.hu : b.hv) + OV_GABLE, halfAcross = b.ridge === 'u' ? b.hv : b.hu;

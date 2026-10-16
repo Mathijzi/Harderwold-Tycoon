@@ -9,7 +9,23 @@ import { existsSync as existsSync6 } from "node:fs";
 function houseLabel(n) {
   return n >= 1e3 ? `${n - 1e3}A` : String(n);
 }
-function houseSize(type, pdfSideM) {
+function villaVariant(num) {
+  const r = hrand(num * 97 + 11);
+  const W = [10.5, 11.5, 12.5, 13.5][Math.floor(r() * 4)], D = r() < 0.5 ? 9 : 10;
+  const floors = r() < 0.72 ? 2 : 1;
+  return { W, D, floors, pool: r() < 0.42, solar: r() < 0.65, upperSide: r() < 0.5 ? -1 : 1, terraceD: 5.5, boat: r() < 0.35, hedge: r() < 0.8 };
+}
+var isVilla = (type) => !!type && /V$/.test(type);
+var isTerraced = (type) => !!type && /G$/.test(type);
+function houseSize(type, pdfSideM, num = 0) {
+  if (isVilla(type)) {
+    const v = villaVariant(num);
+    return { W: v.W, D: v.D, annex: false, cap: 8, scale: 1, patioFront: 0.6, patioBack: v.terraceD, doorM: v.D / 2 + 0.8 };
+  }
+  if (isTerraced(type)) {
+    const W = Math.max(3.5, Math.min(5.4, (pdfSideM ?? 6) - 1.2));
+    return { W, D: 8.5, annex: false, cap: 4, scale: 1, patioFront: 0.4, patioBack: 2.6, doorM: 8.5 / 2 + 0.7 };
+  }
   const t2 = type ?? "6C";
   const cap = parseInt(t2, 10) || 6;
   const size = cap <= 4 ? [6.4, 8.6] : cap <= 6 ? [7, 9.8] : cap <= 8 ? [7.6, 11] : cap <= 12 ? [8.4, 12.6] : [9.2, 15];
@@ -19,7 +35,7 @@ function houseSize(type, pdfSideM) {
     const box = pdfSideM * 1.1;
     scale = Math.max(0.65, Math.min(1, box / (size[0] + 0.8 + (annex ? 3 : 0)), box / (size[1] + 0.8 + 3.6)));
   }
-  return { W: size[0], D: size[1], annex, cap, scale };
+  return { W: size[0], D: size[1], annex, cap, scale, patioFront: PATIO_D, patioBack: 0.4, doorM: size[1] / 2 + 2.4 };
 }
 var PATIO_D = 3.6;
 var ANNEX_W = 3;
@@ -39,7 +55,7 @@ function annexSide(num) {
 }
 function houseFootprint(pos, front, s, num, opts = {}) {
   const m = opts.margin ?? 0, k = s.scale;
-  const back = (s.D / 2 + 0.4) * k, ahead = (s.D / 2 + (opts.patio === false ? 0.4 : PATIO_D)) * k;
+  const back = (s.D / 2 + (opts.patio === false ? 0.4 : s.patioBack)) * k, ahead = (s.D / 2 + (opts.patio === false ? 0.4 : s.patioFront)) * k;
   const side = annexSide(num), a = s.annex ? ANNEX_W : 0;
   const left = (s.W / 2 + 0.4 + (side < 0 ? a : 0)) * k, right = (s.W / 2 + 0.4 + (side > 0 ? a : 0)) * k;
   const cl = (ahead - back) / 2, cw = (right - left) / 2;
@@ -1125,7 +1141,7 @@ function buildNetwork(net, sector) {
   const roadLike = [...edges.values()].filter((e) => e.kind === "lane" || e.kind === "loop" || e.kind === "connector" && !e.uturn);
   const need = (e) => e.kind === "loop" ? 2.7 : 2.4;
   const padPolys = [...stalls.values()].map((st) => ({ pts: st.pad, c: mul(st.pad.reduce((q, w) => add(q, w), { x: 0, y: 0 }), 1 / st.pad.length) }));
-  const sizes = houses.map((hs, i) => houseSize(hs.legendType, sector.houses[i].footprintPts ? sector.houses[i].footprintPts * k : void 0));
+  const sizes = houses.map((hs, i) => houseSize(hs.legendType, sector.houses[i].footprintPts ? sector.houses[i].footprintPts * k : void 0, hs.number));
   houses.forEach((hs, i) => {
     const fixed = sector.houses[i].scale;
     if (fixed) sizes[i].scale = Math.max(0.5, Math.min(1.2, fixed));
@@ -1229,7 +1245,7 @@ function buildNetwork(net, sector) {
   houses.forEach((hs, i) => {
     const moved = dist(hs.pos, start[i]);
     if (moved > 0.3) hs.adjusted = `${moved.toFixed(1)} m verschoven zodat het huis vrij van weg, kruising, parkeervak en buren staat`;
-    hs.door = add(hs.pos, mul(hs.front, (sizes[i].D / 2 + 2.4) * sizes[i].scale));
+    hs.door = add(hs.pos, mul(hs.front, sizes[i].doorM * sizes[i].scale));
   });
   for (const i of open) {
     const f = fp(i), pts = footprintSamples(f, 6, 4);

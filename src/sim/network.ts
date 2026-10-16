@@ -776,7 +776,7 @@ export function buildNetwork(net: NetworkJson, sector: SectorJson): Network {
   const roadLike = [...edges.values()].filter((e) => (e.kind === 'lane' || e.kind === 'loop' || (e.kind === 'connector' && !e.uturn)));
   const need = (e: Edge) => (e.kind === 'loop' ? 2.7 : 2.4); // lane centre -> road edge (1.5 m) + margin
   const padPolys = [...stalls.values()].map((st) => ({ pts: st.pad, c: mul(st.pad.reduce((q, w) => add(q, w), { x: 0, y: 0 }), 1 / st.pad.length) }));
-  const sizes = houses.map((hs, i) => houseSize(hs.legendType, (sector.houses[i] as { footprintPts?: number }).footprintPts ? (sector.houses[i] as { footprintPts?: number }).footprintPts! * k : undefined));
+  const sizes = houses.map((hs, i) => houseSize(hs.legendType, (sector.houses[i] as { footprintPts?: number }).footprintPts ? (sector.houses[i] as { footprintPts?: number }).footprintPts! * k : undefined, hs.number));
   houses.forEach((hs, i) => { const fixed = sector.houses[i].scale; if (fixed) sizes[i].scale = Math.max(0.5, Math.min(1.2, fixed)); hs.scale = sizes[i].scale; });
   const locked = new Set(houses.map((_, i) => i).filter((i) => sector.houses[i].locked));
   const start = houses.map((hs) => ({ ...hs.pos }));
@@ -842,8 +842,8 @@ export function buildNetwork(net: NetworkJson, sector: SectorJson): Network {
   houses.forEach((hs, i) => {
     const moved = dist(hs.pos, start[i]);
     if (moved > 0.3) hs.adjusted = `${moved.toFixed(1)} m verschoven zodat het huis vrij van weg, kruising, parkeervak en buren staat`;
-    // the door is at the front edge of the patio
-    hs.door = add(hs.pos, mul(hs.front, (sizes[i].D / 2 + 2.4) * sizes[i].scale));
+    // the door: front edge of the patio (bungalows) or just in front of the facade (villas)
+    hs.door = add(hs.pos, mul(hs.front, sizes[i].doorM * sizes[i].scale));
   });
   for (const i of open) {
     // diagnose what still blocks the house

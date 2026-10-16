@@ -6282,13 +6282,13 @@ var init_TextureMatrix = __esm({
           this.mapCoord.append(tempMat);
         }
         const texBase = tex.source;
-        const frame2 = this.uClampFrame;
+        const frame3 = this.uClampFrame;
         const margin = this.clampMargin / texBase._resolution;
         const offset = this.clampOffset / texBase._resolution;
-        frame2[0] = (tex.frame.x + margin + offset) / texBase.width;
-        frame2[1] = (tex.frame.y + margin + offset) / texBase.height;
-        frame2[2] = (tex.frame.x + tex.frame.width - margin + offset) / texBase.width;
-        frame2[3] = (tex.frame.y + tex.frame.height - margin + offset) / texBase.height;
+        frame3[0] = (tex.frame.x + margin + offset) / texBase.width;
+        frame3[1] = (tex.frame.y + margin + offset) / texBase.height;
+        frame3[2] = (tex.frame.x + tex.frame.width - margin + offset) / texBase.width;
+        frame3[3] = (tex.frame.y + tex.frame.height - margin + offset) / texBase.height;
         this.uClampOffset[0] = this.clampOffset / texBase.pixelWidth;
         this.uClampOffset[1] = this.clampOffset / texBase.pixelHeight;
         this.isSimple = tex.frame.width === texBase.width && tex.frame.height === texBase.height && tex.rotate === 0;
@@ -6318,7 +6318,7 @@ var init_Texture = __esm({
       constructor({
         source: source3,
         label,
-        frame: frame2,
+        frame: frame3,
         orig,
         trim,
         defaultAnchor,
@@ -6335,9 +6335,9 @@ var init_Texture = __esm({
         this.isTexture = true;
         this.label = label;
         this.source = source3?.source ?? new TextureSource();
-        this.noFrame = !frame2;
-        if (frame2) {
-          this.frame.copyFrom(frame2);
+        this.noFrame = !frame3;
+        if (frame3) {
+          this.frame.copyFrom(frame3);
         } else {
           const { width, height } = this._source;
           this.frame.width = width;
@@ -6381,12 +6381,12 @@ var init_Texture = __esm({
       }
       /** Call this function when you have modified the frame of this texture. */
       updateUvs() {
-        const { uvs, frame: frame2 } = this;
+        const { uvs, frame: frame3 } = this;
         const { width, height } = this._source;
-        const nX = frame2.x / width;
-        const nY = frame2.y / height;
-        const nW = frame2.width / width;
-        const nH = frame2.height / height;
+        const nX = frame3.x / width;
+        const nY = frame3.y / height;
+        const nW = frame3.width / width;
+        const nH = frame3.height / height;
         let rotate = this.rotate;
         if (rotate) {
           const w2 = nW / 2;
@@ -13187,7 +13187,7 @@ var init_Spritesheet = __esm({
           const data = this._frames[i2];
           const rect = data.frame;
           if (rect) {
-            let frame2 = null;
+            let frame3 = null;
             let trim = null;
             const sourceSize = data.trimmed !== false && data.sourceSize ? data.sourceSize : data.frame;
             const orig = new Rectangle(
@@ -13197,14 +13197,14 @@ var init_Spritesheet = __esm({
               Math.floor(sourceSize.h) / this.resolution
             );
             if (data.rotated) {
-              frame2 = new Rectangle(
+              frame3 = new Rectangle(
                 Math.floor(rect.x) / this.resolution,
                 Math.floor(rect.y) / this.resolution,
                 Math.floor(rect.h) / this.resolution,
                 Math.floor(rect.w) / this.resolution
               );
             } else {
-              frame2 = new Rectangle(
+              frame3 = new Rectangle(
                 Math.floor(rect.x) / this.resolution,
                 Math.floor(rect.y) / this.resolution,
                 Math.floor(rect.w) / this.resolution,
@@ -13221,7 +13221,7 @@ var init_Spritesheet = __esm({
             }
             this.textures[i2] = new Texture({
               source: this.textureSource,
-              frame: frame2,
+              frame: frame3,
               orig,
               trim,
               rotate: data.rotated ? 2 : 0,
@@ -13483,7 +13483,7 @@ var init_updateQuadBounds = __esm({
 });
 
 // node_modules/pixi.js/lib/scene/sprite/Sprite.mjs
-var Sprite3;
+var Sprite4;
 var init_Sprite = __esm({
   "node_modules/pixi.js/lib/scene/sprite/Sprite.mjs"() {
     init_ObservablePoint();
@@ -13491,7 +13491,7 @@ var init_Sprite = __esm({
     init_updateQuadBounds();
     init_deprecation();
     init_ViewContainer();
-    Sprite3 = class _Sprite extends ViewContainer {
+    Sprite4 = class _Sprite extends ViewContainer {
       /**
        * @param options - The options for creating the sprite.
        */
@@ -13885,7 +13885,7 @@ var init_AlphaMask = __esm({
       }
       init(mask) {
         this.mask = mask;
-        this.renderMaskToTexture = !(mask instanceof Sprite3);
+        this.renderMaskToTexture = !(mask instanceof Sprite4);
         this.mask.renderable = this.renderMaskToTexture;
         this.mask.includeInBuild = !this.renderMaskToTexture;
         this.mask.measurable = false;
@@ -13911,7 +13911,7 @@ var init_AlphaMask = __esm({
         this.reset();
       }
       static test(mask) {
-        return mask instanceof Sprite3;
+        return mask instanceof Sprite4;
       }
     };
     AlphaMask.extension = ExtensionType.MaskEffect;
@@ -16422,10 +16422,10 @@ var init_CanvasFilterSystem = __esm({
         if (!source3) {
           return texture;
         }
-        const frame2 = texture.frame;
+        const frame3 = texture.frame;
         const resolution = texture.source._resolution ?? texture.source.resolution ?? 1;
-        const width = frame2.width;
-        const height = frame2.height;
+        const width = frame3.width;
+        const height = frame3.height;
         const canvasAndContext = CanvasPool.getOptimalCanvasAndContext(width, height, resolution);
         const { canvas, context: context2 } = canvasAndContext;
         context2.setTransform(1, 0, 0, 1, 0, 0);
@@ -16436,8 +16436,8 @@ var init_CanvasFilterSystem = __esm({
         if (alphaMultiplier !== 1) {
           context2.globalAlpha = alphaMultiplier;
         }
-        const sx = frame2.x * resolution;
-        const sy = frame2.y * resolution;
+        const sx = frame3.x * resolution;
+        const sy = frame3.y * resolution;
         const sw = width * resolution;
         const sh = height * resolution;
         context2.drawImage(
@@ -22967,7 +22967,7 @@ var init_AlphaMaskPipe = __esm({
     AlphaMaskEffect = class extends FilterEffect {
       constructor() {
         super();
-        this._placeholderSprite = new Sprite3(Texture.EMPTY);
+        this._placeholderSprite = new Sprite4(Texture.EMPTY);
         this.filters = [new MaskFilter({
           sprite: this._placeholderSprite,
           inverse: false,
@@ -27602,13 +27602,13 @@ var init_RenderTargetSystem = __esm({
       postrender() {
         this.adaptor.postrender?.(this.rootRenderTarget);
       }
-      bind(surfaceOrOptions, clear = true, clearColor, frame2, mipLevel = 0, layer = 0, flipY) {
+      bind(surfaceOrOptions, clear = true, clearColor, frame3, mipLevel = 0, layer = 0, flipY) {
         let options;
         if ("target" in surfaceOrOptions) {
           options = surfaceOrOptions;
         } else {
           deprecation("8.20.0", "RenderTargetSystem.bind: positional arguments are deprecated, please use an options object instead: bind({ target, clear, clearColor, frame, mipLevel, layer, flipY })");
-          options = { target: surfaceOrOptions, clear, clearColor, frame: frame2, mipLevel, layer, flipY };
+          options = { target: surfaceOrOptions, clear, clearColor, frame: frame3, mipLevel, layer, flipY };
         }
         const renderSurface = options.target;
         clear = options.clear ?? true;
@@ -27616,7 +27616,7 @@ var init_RenderTargetSystem = __esm({
         mipLevel = (options.mipLevel ?? 0) | 0;
         layer = (options.layer ?? 0) | 0;
         flipY = options.flipY;
-        frame2 = options.frame;
+        frame3 = options.frame;
         const renderTarget = this.getRenderTarget(renderSurface);
         const didChange = this.renderTarget !== renderTarget || !!renderTarget.flipY !== !!flipY;
         this.renderTarget = renderTarget;
@@ -27634,22 +27634,22 @@ var init_RenderTargetSystem = __esm({
         }
         const bindState = this._bindState;
         bindState.target = renderSurface;
-        bindState.frame = frame2 ? this._bindFrame.copyFrom(frame2) : void 0;
+        bindState.frame = frame3 ? this._bindFrame.copyFrom(frame3) : void 0;
         bindState.mipLevel = mipLevel;
         bindState.layer = layer;
         bindState.flipY = flipY;
         const pixelWidth = Math.max(source3.pixelWidth >> mipLevel, 1);
         const pixelHeight = Math.max(source3.pixelHeight >> mipLevel, 1);
-        if (!frame2 && renderSurface instanceof Texture) {
-          frame2 = renderSurface.frame;
+        if (!frame3 && renderSurface instanceof Texture) {
+          frame3 = renderSurface.frame;
         }
-        if (frame2) {
+        if (frame3) {
           const resolution = source3._resolution;
           const scale = 1 << Math.max(mipLevel, 0);
-          const baseX = frame2.x * resolution + 0.5 | 0;
-          const baseY = frame2.y * resolution + 0.5 | 0;
-          const baseW = frame2.width * resolution + 0.5 | 0;
-          const baseH = frame2.height * resolution + 0.5 | 0;
+          const baseX = frame3.x * resolution + 0.5 | 0;
+          const baseY = frame3.y * resolution + 0.5 | 0;
+          const baseW = frame3.width * resolution + 0.5 | 0;
+          const baseH = frame3.height * resolution + 0.5 | 0;
           let x2 = Math.floor(baseX / scale);
           let y2 = Math.floor(baseY / scale);
           let w2 = Math.ceil(baseW / scale);
@@ -27794,13 +27794,13 @@ var init_RenderTargetSystem = __esm({
       contextChange() {
         this._gpuRenderTargetHash = /* @__PURE__ */ Object.create(null);
       }
-      push(surfaceOrOptions, clear = CLEAR.ALL, clearColor, frame2, mipLevel = 0, layer = 0, flipY) {
+      push(surfaceOrOptions, clear = CLEAR.ALL, clearColor, frame3, mipLevel = 0, layer = 0, flipY) {
         let options;
         if ("target" in surfaceOrOptions) {
           options = surfaceOrOptions;
         } else {
           deprecation("8.20.0", "RenderTargetSystem.push: positional arguments are deprecated, please use an options object instead: push({ target, clear, clearColor, frame, mipLevel, layer, flipY })");
-          options = { target: surfaceOrOptions, clear, clearColor, frame: frame2, mipLevel, layer, flipY };
+          options = { target: surfaceOrOptions, clear, clearColor, frame: frame3, mipLevel, layer, flipY };
         }
         const renderTarget = this.bind(options);
         this._renderTargetStack.push({
@@ -33831,9 +33831,9 @@ var init_GlTextureSystem = __esm({
       }
       getPixels(texture) {
         const resolution = texture.source.resolution;
-        const frame2 = texture.frame;
-        const width = Math.max(Math.round(frame2.width * resolution), 1);
-        const height = Math.max(Math.round(frame2.height * resolution), 1);
+        const frame3 = texture.frame;
+        const width = Math.max(Math.round(frame3.width * resolution), 1);
+        const height = Math.max(Math.round(frame3.height * resolution), 1);
         const pixels = new Uint8Array(BYTES_PER_PIXEL * width * height);
         const renderer = this._renderer;
         const renderTarget = renderer.renderTarget.getRenderTarget(texture);
@@ -33841,8 +33841,8 @@ var init_GlTextureSystem = __esm({
         const gl = renderer.gl;
         renderer.renderTarget.adaptor.bindFramebuffer(glRenterTarget.resolveTargetFramebuffer);
         gl.readPixels(
-          Math.round(frame2.x * resolution),
-          Math.round(frame2.y * resolution),
+          Math.round(frame3.x * resolution),
+          Math.round(frame3.y * resolution),
           width,
           height,
           gl.RGBA,
@@ -35549,12 +35549,12 @@ var init_CanvasGraphicsAdaptor = __esm({
             if (tint22 !== 16777215) {
               drawSource = canvasUtils.getTintedCanvas({ texture }, tint22);
             }
-            const frame2 = texture.frame;
+            const frame3 = texture.frame;
             const resolution = texture.source._resolution ?? texture.source.resolution ?? 1;
-            let sx = frame2.x * resolution;
-            let sy = frame2.y * resolution;
-            const sw = frame2.width * resolution;
-            const sh = frame2.height * resolution;
+            let sx = frame3.x * resolution;
+            let sy = frame3.y * resolution;
+            const sw = frame3.width * resolution;
+            const sh = frame3.height * resolution;
             if (drawSource !== source3) {
               sx = 0;
               sy = 0;
@@ -35719,8 +35719,8 @@ var init_CanvasBatchAdaptor = __esm({
         for (let i2 = 0; i2 < elements.length; i2++) {
           const element = elements[i2];
           if (!element.packAsQuad) continue;
-          const quad2 = element;
-          const texture = quad2.texture;
+          const quad3 = element;
+          const texture = quad3.texture;
           const source3 = texture ? canvasUtils.getCanvasSource(texture) : null;
           if (!source3) continue;
           const textureStyle = texture.source.style;
@@ -35731,7 +35731,7 @@ var init_CanvasBatchAdaptor = __esm({
           }
           contextSystem.setBlendMode(batch.blendMode);
           const globalColor = renderer.globalUniforms.globalUniformData?.worldColor ?? 4294967295;
-          const argb = quad2.color;
+          const argb = quad3.color;
           const globalAlpha = (globalColor >>> 24 & 255) / 255;
           const quadAlpha = (argb >>> 24 & 255) / 255;
           const filterAlpha = renderer.filter?.alphaMultiplier ?? 1;
@@ -35741,17 +35741,17 @@ var init_CanvasBatchAdaptor = __esm({
           const globalTint = globalColor & 16777215;
           const quadTint = argb & 16777215;
           const tint2 = bgr2rgb(multiplyHexColors(quadTint, globalTint));
-          const frame2 = texture.frame;
+          const frame3 = texture.frame;
           const repeatU = textureStyle.addressModeU ?? textureStyle.addressMode;
           const repeatV = textureStyle.addressModeV ?? textureStyle.addressMode;
           const repeat = _CanvasBatchAdaptor2._getPatternRepeat(repeatU, repeatV);
           const resolution = texture.source._resolution ?? texture.source.resolution ?? 1;
-          const isFromCachedRenderGroup = quad2.renderable?.renderGroup?.isCachedAsTexture;
-          const sx = frame2.x * resolution;
-          const sy = frame2.y * resolution;
-          const sw = frame2.width * resolution;
-          const sh = frame2.height * resolution;
-          const bounds = quad2.bounds;
+          const isFromCachedRenderGroup = quad3.renderable?.renderGroup?.isCachedAsTexture;
+          const sx = frame3.x * resolution;
+          const sy = frame3.y * resolution;
+          const sw = frame3.width * resolution;
+          const sh = frame3.height * resolution;
+          const bounds = quad3.bounds;
           const isRootTarget = renderer.renderTarget.renderTarget.isRoot;
           const dx = bounds.minX;
           const dy = bounds.minY;
@@ -35765,7 +35765,7 @@ var init_CanvasBatchAdaptor = __esm({
           const willUseProcessedCanvas = !needsRepeat && (tint2 !== 16777215 || rotate);
           const applyRotateTransform = rotate && !willUseProcessedCanvas;
           if (applyRotateTransform) {
-            _CanvasBatchAdaptor2._tempPatternMatrix.copyFrom(quad2.transform);
+            _CanvasBatchAdaptor2._tempPatternMatrix.copyFrom(quad3.transform);
             groupD8.matrixAppendRotationInv(
               _CanvasBatchAdaptor2._tempPatternMatrix,
               rotate,
@@ -35776,14 +35776,14 @@ var init_CanvasBatchAdaptor = __esm({
             );
             contextSystem.setContextTransform(
               _CanvasBatchAdaptor2._tempPatternMatrix,
-              quad2.roundPixels === 1,
+              quad3.roundPixels === 1,
               void 0,
               isFromCachedRenderGroup && isRootTarget
             );
           } else {
             contextSystem.setContextTransform(
-              quad2.transform,
-              quad2.roundPixels === 1,
+              quad3.transform,
+              quad3.roundPixels === 1,
               void 0,
               isFromCachedRenderGroup && isRootTarget
             );
@@ -35792,14 +35792,14 @@ var init_CanvasBatchAdaptor = __esm({
           const drawH = dh;
           let drawX = applyRotateTransform ? 0 : dx;
           let drawY = applyRotateTransform ? 0 : dy;
-          if (!applyRotateTransform && quad2.roundPixels === 1) {
+          if (!applyRotateTransform && quad3.roundPixels === 1) {
             drawX |= 0;
             drawY |= 0;
           }
           if (needsRepeat) {
             let patternSource = source3;
             const canTint = tint2 !== 16777215 && !rotate;
-            const fitsFrame = frame2.width <= texture.source.width && frame2.height <= texture.source.height;
+            const fitsFrame = frame3.width <= texture.source.width && frame3.height <= texture.source.height;
             if (canTint && fitsFrame) {
               patternSource = canvasUtils.getTintedCanvas({ texture }, tint2);
             }
@@ -41236,12 +41236,12 @@ var init_CanvasTextureSystem = __esm({
         if (!source3) {
           return canvas;
         }
-        const frame2 = texture.frame;
+        const frame3 = texture.frame;
         const resolution = texture.source._resolution ?? texture.source.resolution ?? 1;
-        const sx = frame2.x * resolution;
-        const sy = frame2.y * resolution;
-        const sw = frame2.width * resolution;
-        const sh = frame2.height * resolution;
+        const sx = frame3.x * resolution;
+        const sy = frame3.y * resolution;
+        const sw = frame3.width * resolution;
+        const sh = frame3.height * resolution;
         canvas.width = Math.ceil(sw);
         canvas.height = Math.ceil(sh);
         context2.drawImage(
@@ -41643,7 +41643,23 @@ function rng(seed) {
 }
 
 // src/shared/house.ts
-function houseSize(type, pdfSideM) {
+function villaVariant(num) {
+  const r2 = hrand(num * 97 + 11);
+  const W = [10.5, 11.5, 12.5, 13.5][Math.floor(r2() * 4)], D = r2() < 0.5 ? 9 : 10;
+  const floors = r2() < 0.72 ? 2 : 1;
+  return { W, D, floors, pool: r2() < 0.42, solar: r2() < 0.65, upperSide: r2() < 0.5 ? -1 : 1, terraceD: 5.5, boat: r2() < 0.35, hedge: r2() < 0.8 };
+}
+var isVilla = (type) => !!type && /V$/.test(type);
+var isTerraced = (type) => !!type && /G$/.test(type);
+function houseSize(type, pdfSideM, num = 0) {
+  if (isVilla(type)) {
+    const v2 = villaVariant(num);
+    return { W: v2.W, D: v2.D, annex: false, cap: 8, scale: 1, patioFront: 0.6, patioBack: v2.terraceD, doorM: v2.D / 2 + 0.8 };
+  }
+  if (isTerraced(type)) {
+    const W = Math.max(3.5, Math.min(5.4, (pdfSideM ?? 6) - 1.2));
+    return { W, D: 8.5, annex: false, cap: 4, scale: 1, patioFront: 0.4, patioBack: 2.6, doorM: 8.5 / 2 + 0.7 };
+  }
   const t2 = type ?? "6C";
   const cap2 = parseInt(t2, 10) || 6;
   const size = cap2 <= 4 ? [6.4, 8.6] : cap2 <= 6 ? [7, 9.8] : cap2 <= 8 ? [7.6, 11] : cap2 <= 12 ? [8.4, 12.6] : [9.2, 15];
@@ -41653,7 +41669,7 @@ function houseSize(type, pdfSideM) {
     const box = pdfSideM * 1.1;
     scale = Math.max(0.65, Math.min(1, box / (size[0] + 0.8 + (annex ? 3 : 0)), box / (size[1] + 0.8 + 3.6)));
   }
-  return { W: size[0], D: size[1], annex, cap: cap2, scale };
+  return { W: size[0], D: size[1], annex, cap: cap2, scale, patioFront: PATIO_D, patioBack: 0.4, doorM: size[1] / 2 + 2.4 };
 }
 var PATIO_D = 3.6;
 var ANNEX_W = 3;
@@ -41673,7 +41689,7 @@ function annexSide(num) {
 }
 function houseFootprint(pos, front, s2, num, opts = {}) {
   const m2 = opts.margin ?? 0, k2 = s2.scale;
-  const back = (s2.D / 2 + 0.4) * k2, ahead = (s2.D / 2 + (opts.patio === false ? 0.4 : PATIO_D)) * k2;
+  const back = (s2.D / 2 + (opts.patio === false ? 0.4 : s2.patioBack)) * k2, ahead = (s2.D / 2 + (opts.patio === false ? 0.4 : s2.patioFront)) * k2;
   const side = annexSide(num), a2 = s2.annex ? ANNEX_W : 0;
   const left = (s2.W / 2 + 0.4 + (side < 0 ? a2 : 0)) * k2, right = (s2.W / 2 + 0.4 + (side > 0 ? a2 : 0)) * k2;
   const cl = (ahead - back) / 2, cw = (right - left) / 2;
@@ -42373,7 +42389,7 @@ function buildNetwork(net2, sector2) {
   const roadLike = [...edges.values()].filter((e2) => e2.kind === "lane" || e2.kind === "loop" || e2.kind === "connector" && !e2.uturn);
   const need = (e2) => e2.kind === "loop" ? 2.7 : 2.4;
   const padPolys = [...stalls.values()].map((st) => ({ pts: st.pad, c: mul(st.pad.reduce((q, w2) => add(q, w2), { x: 0, y: 0 }), 1 / st.pad.length) }));
-  const sizes = houses.map((hs, i2) => houseSize(hs.legendType, sector2.houses[i2].footprintPts ? sector2.houses[i2].footprintPts * k2 : void 0));
+  const sizes = houses.map((hs, i2) => houseSize(hs.legendType, sector2.houses[i2].footprintPts ? sector2.houses[i2].footprintPts * k2 : void 0, hs.number));
   houses.forEach((hs, i2) => {
     const fixed = sector2.houses[i2].scale;
     if (fixed) sizes[i2].scale = Math.max(0.5, Math.min(1.2, fixed));
@@ -42477,7 +42493,7 @@ function buildNetwork(net2, sector2) {
   houses.forEach((hs, i2) => {
     const moved = dist(hs.pos, start[i2]);
     if (moved > 0.3) hs.adjusted = `${moved.toFixed(1)} m verschoven zodat het huis vrij van weg, kruising, parkeervak en buren staat`;
-    hs.door = add(hs.pos, mul(hs.front, (sizes[i2].D / 2 + 2.4) * sizes[i2].scale));
+    hs.door = add(hs.pos, mul(hs.front, sizes[i2].doorM * sizes[i2].scale));
   });
   for (const i2 of open) {
     const f2 = fp(i2), pts = footprintSamples(f2, 6, 4);
@@ -43145,6 +43161,284 @@ function hull(pts) {
   return lower.concat(upper);
 }
 
+// src/web/projector/villas.ts
+var WHITE = "#f3f3ef";
+var WHITE_SHADE = "#e4e4df";
+var FRAME = "#1c1e21";
+var DECK = "#b48d63";
+var up2 = { x: 0, y: 0, z: 1 };
+function quad2(p00, p10, p01, out2, paint, opts = {}) {
+  let O = p00, Uv = sub3(p10, p00);
+  const Vv = sub3(p01, p00);
+  const w2 = Math.hypot(Uv.x, Uv.y, Uv.z), h2 = Math.hypot(Vv.x, Vv.y, Vv.z);
+  let U = mul3(Uv, 1 / w2);
+  const V = mul3(Vv, 1 / h2);
+  if (dot3(cross3(U, V), out2) < 0) {
+    O = p10;
+    U = mul3(U, -1);
+    Uv = mul3(Uv, -1);
+  }
+  return makeFace(O, U, V, [{ x: 0, y: 0 }, { x: w2, y: 0 }, { x: w2, y: h2 }, { x: 0, y: h2 }], (ctx2) => paint(ctx2, w2, h2), opts);
+}
+function frame(h2) {
+  const f2 = { x: Math.cos(h2.rot), y: Math.sin(h2.rot) };
+  const r2 = { x: -f2.y, y: f2.x };
+  const k2 = h2.scale ?? 1;
+  const L = (a2, b2, z = 0) => ({ x: h2.x + (r2.x * a2 + f2.x * b2) * k2, y: h2.y + (r2.y * a2 + f2.y * b2) * k2, z: z * k2 });
+  const nr = { x: r2.x, y: r2.y, z: 0 }, nf = { x: f2.x, y: f2.y, z: 0 };
+  const neg = (n2) => ({ x: -n2.x, y: -n2.y, z: -n2.z });
+  const faces = [];
+  const box = (a0, b0, a1, b1, z0, z1, paint, opts = {}) => {
+    faces.push(quad2(L(a0, b1, z1), L(a1, b1, z1), L(a0, b0, z1), up2, (ctx2, w2, hh) => paint("top", ctx2, w2, hh), opts));
+    const sides = [
+      [[a1, b0], [a0, b0], neg(nf), "back"],
+      [[a1, b1], [a1, b0], nr, "right"],
+      [[a0, b1], [a1, b1], nf, "front"],
+      [[a0, b0], [a0, b1], neg(nr), "left"]
+    ];
+    for (const [p0, p1, n2, side] of sides) {
+      if (!facing(n2)) continue;
+      faces.push(quad2(L(p0[0], p0[1], z1), L(p1[0], p1[1], z1), L(p0[0], p0[1], z0), n2, (ctx2, w2, hh) => paint(side, ctx2, w2, hh), opts));
+    }
+  };
+  const flat = (col) => (_s, ctx2, w2, hh) => {
+    ctx2.fillStyle = col;
+    ctx2.fillRect(0, 0, w2, hh);
+  };
+  const ground2 = (a0, b0, a1, b1, z, paint, key) => faces.push(quad2(L(a0, b1, z), L(a1, b1, z), L(a0, b0, z), up2, paint, { key, ambient: 0.8 }));
+  return { L, faces, box, flat, ground: ground2, nf, nr, neg, k: k2 };
+}
+function plaster(ctx2, w2, hh) {
+  const g2 = ctx2.createLinearGradient(0, 0, 0, hh);
+  g2.addColorStop(0, WHITE);
+  g2.addColorStop(1, WHITE_SHADE);
+  ctx2.fillStyle = g2;
+  ctx2.fillRect(0, 0, w2, hh);
+  ctx2.fillStyle = "rgba(40,40,40,0.35)";
+  ctx2.fillRect(0, hh - 0.08, w2, 0.08);
+}
+function pane(ctx2, x2, y2, w2, h2, mullions, warm = 0.12) {
+  glass(ctx2, x2, y2, w2, h2, mullions, warm);
+  ctx2.strokeStyle = FRAME;
+  ctx2.lineWidth = 0.1;
+  ctx2.strokeRect(x2, y2, w2, h2);
+}
+function fascia(ctx2, w2, hh) {
+  ctx2.fillStyle = "#fbfbf8";
+  ctx2.fillRect(0, 0, w2, hh);
+  ctx2.fillStyle = "rgba(0,0,0,0.18)";
+  ctx2.fillRect(0, hh - 0.05, w2, 0.05);
+}
+function solarRoof(ctx2, w2, hh, rows) {
+  ctx2.fillStyle = "#d9dad6";
+  ctx2.fillRect(0, 0, w2, hh);
+  ctx2.strokeStyle = "#bdbeb9";
+  ctx2.lineWidth = 0.12;
+  ctx2.strokeRect(0.25, 0.25, w2 - 0.5, hh - 0.5);
+  const pat = ctx2.createPattern(solar(), "repeat");
+  const pw = 1.05, ph = 1.75, cols = Math.max(1, Math.floor((w2 - 1.4) / pw)), n2 = Math.min(rows, Math.max(1, Math.floor((hh - 1.2) / (ph + 0.5))));
+  const ox = (w2 - cols * pw) / 2;
+  for (let j2 = 0; j2 < n2; j2++) for (let i2 = 0; i2 < cols; i2++) {
+    const x2 = ox + i2 * pw, y2 = 0.7 + j2 * (ph + 0.5);
+    pat.setTransform(new DOMMatrix([1 / (2 * PPM), 0, 0, ph / (2 * PPM), x2, y2]));
+    ctx2.fillStyle = pat;
+    ctx2.fillRect(x2, y2, pw - 0.05, ph);
+  }
+}
+function gravelRoof(ctx2, w2, hh) {
+  ctx2.fillStyle = "#d6d6d1";
+  ctx2.fillRect(0, 0, w2, hh);
+  ctx2.strokeStyle = "#c2c2bc";
+  ctx2.lineWidth = 0.12;
+  ctx2.strokeRect(0.25, 0.25, w2 - 0.5, hh - 0.5);
+}
+function buildVilla(h2) {
+  const v2 = villaVariant(h2.number);
+  const rnd = hrand2(h2.number * 41 + 5);
+  const { L, faces, box, flat, ground: ground2, k: k2 } = frame(h2);
+  const W = v2.W, D = v2.D, H1 = 3.1, SL = 0.38;
+  const tD = v2.terraceD;
+  const back0 = -D / 2, tEnd = back0 - tD;
+  const waterAt = h2.waterBack !== void 0 ? -h2.waterBack : void 0;
+  const terraceEnd = waterAt !== void 0 ? Math.max(tEnd, waterAt + 0.6) : tEnd;
+  ground2(-W / 2 - 1.2, terraceEnd, W / 2 + 1.2, back0, 0.02, (ctx2, w2, hh) => fillTex(ctx2, concreteTiles(), PPM * 0.8, w2, hh), -1e6);
+  if (v2.pool && back0 - terraceEnd > 4.2) {
+    const pa0 = v2.upperSide > 0 ? -W / 2 + 0.6 : W / 2 - 0.6 - Math.min(7, W * 0.55), pa1 = pa0 + Math.min(7, W * 0.55);
+    const pb1 = back0 - 1.4, pb0 = Math.max(terraceEnd + 0.5, pb1 - 3.2);
+    ground2(pa0 - 0.3, pb0 - 0.3, pa1 + 0.3, pb1 + 0.3, 0.03, (ctx2, w2, hh) => {
+      ctx2.fillStyle = "#e9e7e0";
+      ctx2.fillRect(0, 0, w2, hh);
+    }, -1e6 + 1);
+    ground2(pa0, pb0, pa1, pb1, 0.04, (ctx2, w2, hh) => {
+      const g2 = ctx2.createLinearGradient(0, 0, w2, hh);
+      g2.addColorStop(0, "#8fe3ee");
+      g2.addColorStop(1, "#2aa6c4");
+      ctx2.fillStyle = g2;
+      ctx2.fillRect(0, 0, w2, hh);
+      ctx2.strokeStyle = "rgba(255,255,255,0.45)";
+      ctx2.lineWidth = 0.06;
+      for (let i2 = 0; i2 < 3; i2++) {
+        ctx2.beginPath();
+        ctx2.moveTo(w2 * (0.15 + i2 * 0.3), hh * 0.2);
+        ctx2.lineTo(w2 * (0.3 + i2 * 0.3), hh * 0.8);
+        ctx2.stroke();
+      }
+      ctx2.fillStyle = "rgba(255,255,255,0.75)";
+      for (let i2 = 0; i2 < 4; i2++) ctx2.fillRect(0.1, 0.25 + i2 * 0.3, 0.9, 0.12);
+    }, -1e6 + 2);
+    for (const da of [0.6, 1.6]) box(pa1 + 0.6 + da - 0.6, pb0 + 0.6, pa1 + 0.6 + da, pb0 + 2.4, 0, 0.42, flat("#5e6164"));
+  } else {
+    const ta = v2.upperSide * W * 0.2, tb = back0 - 2.2;
+    box(ta - 1.1, tb - 0.5, ta + 1.1, tb + 0.5, 0.7, 0.78, flat("#8a6a4a"));
+    for (const [ca, cb] of [[-0.7, -0.9], [0, -0.9], [0.7, -0.9], [-0.7, 0.9], [0, 0.9], [0.7, 0.9]]) box(ta + ca - 0.22, tb + cb - 0.22, ta + ca + 0.22, tb + cb + 0.22, 0, 0.9, flat("#2b2d30"));
+  }
+  if (v2.hedge) for (const s2 of [-1, 1]) box(s2 * (W / 2 + 1.6) - 0.45, terraceEnd + 0.2, s2 * (W / 2 + 1.6) + 0.45, back0 + 2.5, 0, 1.3, (side, ctx2, w2, hh) => {
+    ctx2.fillStyle = side === "top" ? "#4f7a33" : "#3d6428";
+    ctx2.fillRect(0, 0, w2, hh);
+    ctx2.fillStyle = "rgba(120,170,70,0.35)";
+    for (let i2 = 0; i2 < 18; i2++) ctx2.fillRect(rnd() * w2, rnd() * hh, 0.25, 0.18);
+  });
+  if (waterAt !== void 0 && waterAt < back0 - 1) {
+    const jb1 = terraceEnd, jb0 = waterAt - 4.2, ja0 = -1.9 + v2.upperSide * 1.5, ja1 = ja0 + 3.8;
+    box(ja0, jb0, ja1, jb1, -0.25, 0.28, (side, ctx2, w2, hh) => {
+      if (side === "top") {
+        ctx2.fillStyle = DECK;
+        ctx2.fillRect(0, 0, w2, hh);
+        ctx2.strokeStyle = "rgba(70,45,25,0.45)";
+        ctx2.lineWidth = 0.035;
+        for (let x2 = 0.14; x2 < w2; x2 += 0.14) {
+          ctx2.beginPath();
+          ctx2.moveTo(x2, 0);
+          ctx2.lineTo(x2, hh);
+          ctx2.stroke();
+        }
+        ctx2.strokeStyle = "#7a5a3e";
+        ctx2.lineWidth = 0.12;
+        ctx2.strokeRect(0.06, 0.06, w2 - 0.12, hh - 0.12);
+      } else {
+        ctx2.fillStyle = "#6e5440";
+        ctx2.fillRect(0, 0, w2, hh);
+      }
+    }, { key: -1e6 + 3 });
+    if (v2.boat) {
+      const ba = ja1 + 0.55, bc = jb0 + 1.6, len = 3.6;
+      box(ba - 0.35, bc - 0.2, ba + 0.35, bc + len, 0, 0.32, (side, ctx2, w2, hh) => {
+        ctx2.fillStyle = side === "top" ? "#f2f2ee" : "#d9534a";
+        ctx2.fillRect(0, 0, w2, hh);
+      });
+    }
+  }
+  box(-W / 2, -D / 2, W / 2, D / 2, 0, H1, (side, ctx2, w2, hh) => {
+    plaster(ctx2, w2, hh);
+    if (side === "back") {
+      const n2 = Math.max(3, Math.round(w2 / 2.2)), gw = w2 * 0.78;
+      pane(ctx2, (w2 - gw) / 2, 0.35, gw, hh - 0.45, n2, 0.2);
+    } else if (side === "front") {
+      const dx = w2 * (v2.upperSide > 0 ? 0.28 : 0.62);
+      ctx2.fillStyle = FRAME;
+      ctx2.fillRect(dx, hh - 2.35, 1.1, 2.35);
+      pane(ctx2, dx + 1.3, hh - 2.35, 0.45, 2.2, 1, 0.08);
+      pane(ctx2, w2 * (v2.upperSide > 0 ? 0.62 : 0.12), 0.7, w2 * 0.26, 1.3, 2, 0.08);
+    } else {
+      pane(ctx2, w2 * 0.25, 0.5, 2.2, hh - 0.6, 2, 0.15);
+    }
+  });
+  const s0 = H1, s1 = H1 + SL, oS = 0.55, oB = 1.6, oF = 0.45;
+  box(-W / 2 - oS, -D / 2 - oB, W / 2 + oS, D / 2 + oF, s0, s1, (side, ctx2, w2, hh) => {
+    if (side === "top") {
+      if (v2.floors === 1 && v2.solar) solarRoof(ctx2, w2, hh, 3);
+      else gravelRoof(ctx2, w2, hh);
+    } else fascia(ctx2, w2, hh);
+  });
+  let topZ = s1;
+  if (v2.floors === 2) {
+    const uW = W * 0.68, uD = D * 0.72, ua = v2.upperSide * (W - uW) / 2 * 0.8, ub = D / 2 - uD / 2 - 0.2;
+    const H2 = 2.9;
+    box(ua - uW / 2, ub - uD / 2, ua + uW / 2, ub + uD / 2, s1, s1 + H2, (side, ctx2, w2, hh) => {
+      plaster(ctx2, w2, hh);
+      if (side === "back") {
+        const gw = w2 * 0.7;
+        pane(ctx2, (w2 - gw) / 2, 0.3, gw, hh - 0.4, 3, 0.15);
+      } else if (side === "front") {
+        pane(ctx2, w2 * 0.15, 0.8, w2 * 0.22, 1.2, 1);
+        pane(ctx2, w2 * 0.6, 0.8, w2 * 0.25, 1.2, 2);
+      } else pane(ctx2, w2 * 0.4, 0.8, 1.2, 1.3, 1);
+    });
+    const bb = -D / 2 - oB + 0.15;
+    box(-W / 2 - oS + 0.15, bb, W / 2 + oS - 0.15, bb + 0.06, s1, s1 + 1.05, (side, ctx2, w2, hh) => {
+      ctx2.fillStyle = side === "top" ? "#111" : "rgba(20,22,26,0.82)";
+      ctx2.fillRect(0, 0, w2, hh);
+      ctx2.fillStyle = "#000";
+      for (let x2 = 0; x2 < w2; x2 += 1.4) ctx2.fillRect(x2, 0, 0.06, hh);
+    });
+    const t0 = s1 + H2, t1 = t0 + SL, o2 = 0.6;
+    box(ua - uW / 2 - o2, ub - uD / 2 - o2 - 0.3, ua + uW / 2 + o2, ub + uD / 2 + o2, t0, t1, (side, ctx2, w2, hh) => {
+      if (side === "top") {
+        if (v2.solar) solarRoof(ctx2, w2, hh, 2);
+        else gravelRoof(ctx2, w2, hh);
+      } else fascia(ctx2, w2, hh);
+    });
+    topZ = t1;
+  }
+  return finish(h2, L, faces, W, D, topZ, k2, [L(-W / 2 - 2, terraceEnd - 6, 0), L(W / 2 + 2, -D / 2 - 12, 0)]);
+}
+function buildTerraced(h2) {
+  const { L, faces, box, ground: ground2, k: k2 } = frame(h2);
+  const sz = houseSize(h2.legendType, h2.unitW, h2.number);
+  const W = Math.min(6.6, (h2.unitW ?? sz.W + 1.2) / (h2.scale ?? 1) + 0.04), D = sz.D, H2 = 5.6, SL = 0.35;
+  const rnd = hrand2(h2.number * 13 + 1);
+  ground2(-W / 2, -D / 2 - sz.patioBack, W / 2, -D / 2, 0.02, (ctx2, w2, hh) => fillTex(ctx2, concreteTiles(), PPM * 0.8, w2, hh), -1e6);
+  box(-W / 2, -D / 2, W / 2, D / 2, 0, H2, (side, ctx2, w2, hh) => {
+    plaster(ctx2, w2, hh);
+    ctx2.fillStyle = "rgba(0,0,0,0.12)";
+    ctx2.fillRect(0, hh * 0.48, w2, 0.06);
+    if (side === "back") {
+      pane(ctx2, w2 * 0.12, hh - 2.5, w2 * 0.76, 2.4, 3, 0.18);
+      pane(ctx2, w2 * 0.2, 0.6, w2 * 0.6, 1.4, 2);
+    } else if (side === "front") {
+      ctx2.fillStyle = FRAME;
+      ctx2.fillRect(w2 * 0.15, hh - 2.3, 1, 2.3);
+      pane(ctx2, w2 * 0.5, hh - 2, w2 * 0.38, 1.3, 2);
+      pane(ctx2, w2 * 0.25, 0.6, w2 * 0.5, 1.3, 2);
+    }
+  });
+  box(-W / 2 - 0.15, -D / 2 - 0.7, W / 2 + 0.15, D / 2 + 0.35, H2, H2 + SL, (side, ctx2, w2, hh) => {
+    if (side === "top") {
+      if (rnd() < 0.5) solarRoof(ctx2, w2, hh, 2);
+      else gravelRoof(ctx2, w2, hh);
+    } else fascia(ctx2, w2, hh);
+  });
+  box(W / 2 - 0.06, -D / 2 - sz.patioBack, W / 2, -D / 2, 0, 1.8, (_s, ctx2, w2, hh) => {
+    ctx2.fillStyle = "#2b2e31";
+    ctx2.fillRect(0, 0, w2, hh);
+  });
+  return finish(h2, L, faces, W, D, H2 + SL, k2, [L(-W / 2, -D / 2 - sz.patioBack - 1, 0)]);
+}
+function finish(h2, L, faces, W, D, topZ, _k, extra) {
+  for (const fc of faces) if (fc.key === void 0 || Number.isNaN(fc.key)) fc.key = 0;
+  faces.sort((a2, b2) => a2.key - b2.key);
+  const ov = 2.2;
+  const verts = [
+    L(-W / 2 - ov, -D / 2 - ov, 0),
+    L(W / 2 + ov, -D / 2 - ov, 0),
+    L(-W / 2 - ov, D / 2 + ov, 0),
+    L(W / 2 + ov, D / 2 + ov, 0),
+    L(-W / 2 - ov, -D / 2 - ov, topZ + 0.5),
+    L(W / 2 + ov, D / 2 + ov, topZ + 0.5),
+    L(-W / 2 - ov, D / 2 + ov, topZ + 0.5),
+    L(W / 2 + ov, -D / 2 - ov, topZ + 0.5),
+    ...extra
+  ];
+  const bb = screenBounds(verts, 6);
+  const c2 = renderFaces(faces, bb);
+  const corners = [L(-W / 2, -D / 2), L(W / 2, -D / 2), L(W / 2, D / 2), L(-W / 2, D / 2)];
+  const shadow = hull([...corners.map((p2) => ({ x: p2.x, y: p2.y })), ...corners.map((p2) => shadowPt({ ...p2, z: topZ }))]);
+  const footprint = corners.map((p2) => ({ x: p2.x, y: p2.y }));
+  const frontY = Math.max(...footprint.map((p2) => p2.y));
+  const sprite = { canvas: c2, x: bb.x0, y: bb.y0, key: (h2.y + (frontY - h2.y) * 0.6) * cam.CE, kind: "house", id: `H${h2.number}`, anchor: Pv(L(0, 0, topZ + 1.2)), topZ, footprint };
+  return { sprite, shadow };
+}
+
 // src/web/projector/brand.ts
 var BRAND = {
   teal: "#1f2a38",
@@ -43340,19 +43634,19 @@ function drawVehicle(ctx2, d2, t2) {
 function convex(pts) {
   const p2 = pts.slice().sort((a2, b2) => a2.x - b2.x || a2.y - b2.y);
   const cr = (o2, a2, b2) => (a2.x - o2.x) * (b2.y - o2.y) - (a2.y - o2.y) * (b2.x - o2.x);
-  const lo = [], up2 = [];
+  const lo = [], up3 = [];
   for (const q of p2) {
     while (lo.length >= 2 && cr(lo[lo.length - 2], lo[lo.length - 1], q) <= 0) lo.pop();
     lo.push(q);
   }
   for (let i2 = p2.length - 1; i2 >= 0; i2--) {
     const q = p2[i2];
-    while (up2.length >= 2 && cr(up2[up2.length - 2], up2[up2.length - 1], q) <= 0) up2.pop();
-    up2.push(q);
+    while (up3.length >= 2 && cr(up3[up3.length - 2], up3[up3.length - 1], q) <= 0) up3.pop();
+    up3.push(q);
   }
-  up2.pop();
+  up3.pop();
   lo.pop();
-  return lo.concat(up2);
+  return lo.concat(up3);
 }
 function sideText(ctx2, o2, ou, ov, text, col, _side) {
   if (!text) return;
@@ -43730,7 +44024,7 @@ function massingBlocks(m2, toWorld) {
     for (let k2 = 0; k2 < parts; k2++) {
       const cu = u0 + du * (k2 + 0.5), cv = (v0 + v1) / 2;
       const hu = du / 2, hv = (v1 - v0) / 2;
-      const ridge = w2.roof === "green" ? "flat" : w2.ridge ?? (hu >= hv ? "u" : "v");
+      const ridge = w2.roof === "green" || w2.roof === "white" ? "flat" : w2.ridge ?? (hu >= hv ? "u" : "v");
       const span = ridge === "u" ? hv : hu;
       const rise = ridge === "flat" ? 0 : Math.tan((w2.pitchDeg ?? 30) * Math.PI / 180) * span;
       out2.push({ id: parts > 1 ? `${w2.id}${k2 + 1}` : w2.id, wing: w2, c: { x: U.x * cu + V.x * cv, y: U.y * cu + V.y * cv }, U, V, hu, hv, eave: w2.eaveM, rise, ridge, part: k2, parts });
@@ -43806,6 +44100,24 @@ function greenRoof(ctx2, w2, h2, seed) {
   ctx2.fillStyle = "#b9b3a4";
   ctx2.fillRect(0.35, 0.35, w2 - 0.7, 0.25);
 }
+function whiteRoof(ctx2, w2, h2) {
+  ctx2.fillStyle = "#d7d7d2";
+  ctx2.fillRect(-1, -1, w2 + 2, h2 + 2);
+  ctx2.strokeStyle = "#f6f6f2";
+  ctx2.lineWidth = 0.6;
+  ctx2.strokeRect(0.3, 0.3, w2 - 0.6, h2 - 0.6);
+  ctx2.strokeStyle = "rgba(0,0,0,0.12)";
+  ctx2.lineWidth = 0.08;
+  ctx2.strokeRect(0.62, 0.62, w2 - 1.24, h2 - 1.24);
+  if (w2 > 14 && h2 > 14) {
+    const pat = ctx2.createPattern(solar(), "repeat");
+    for (let y2 = 2.2; y2 + 1.8 < h2 - 2; y2 += 2.6) for (let x2 = 2.2; x2 + 1.05 < w2 - 2; x2 += 1.1) {
+      pat.setTransform(new DOMMatrix([1 / (2 * PPM), 0, 0, 1.75 / (2 * PPM), x2, y2]));
+      ctx2.fillStyle = pat;
+      ctx2.fillRect(x2, y2, 1.05, 1.75);
+    }
+  }
+}
 function paintWall(ctx2, k2) {
   const { b: b2, w: w2, zTop, zEave, zBase, kind } = k2;
   const st = b2.wing.style;
@@ -43813,6 +44125,10 @@ function paintWall(ctx2, k2) {
   const H2 = zEave - zBase;
   const y0 = tri;
   const dark = timber(20 + k2.seed % 4, 0), warm = timber(30 + k2.seed % 3, 1);
+  if (st === "modern") {
+    paintModern(ctx2, k2);
+    return;
+  }
   if (st === "workshop") fillTex(ctx2, warm, PPM, w2, zTop + 1);
   else fillTex(ctx2, dark, PPM, w2, zTop + 1);
   if (kind === "gable" && st !== "workshop") {
@@ -43910,6 +44226,48 @@ function paintWall(ctx2, k2) {
     ctx2.restore();
   }
 }
+function paintModern(ctx2, k2) {
+  const { w: w2, zTop, zEave, zBase } = k2;
+  const H2 = zEave - zBase, vb = zTop - zBase;
+  const g2 = ctx2.createLinearGradient(0, 0, 0, vb);
+  g2.addColorStop(0, "#f4f4f0");
+  g2.addColorStop(1, "#e2e2dc");
+  ctx2.fillStyle = g2;
+  ctx2.fillRect(-1, -1, w2 + 2, vb + 2);
+  if (H2 > 1.2 && zBase < 0.3) {
+    const gH = Math.min(3, H2 - 0.5), gTop = vb - gH - 0.1;
+    bays(ctx2, w2, gTop, gH, 3.2, (x2, bw) => {
+      if (bw > 1.4) {
+        glass(ctx2, x2 + 0.2, gTop, bw - 0.4, gH, 2, 0.28);
+        ctx2.strokeStyle = "#1c1e21";
+        ctx2.lineWidth = 0.12;
+        ctx2.strokeRect(x2 + 0.2, gTop, bw - 0.4, gH);
+      }
+    });
+    if (H2 > 5) {
+      ctx2.fillStyle = "#fbfbf8";
+      ctx2.fillRect(-1, gTop - 0.55, w2 + 2, 0.4);
+      for (let y2 = gTop - 0.75; y2 > 1.4; y2 -= 3.1) bays(ctx2, w2, 0, 0, 3.2, (x2, bw) => {
+        if (bw > 1.4) {
+          glass(ctx2, x2 + 0.35, y2 - 1.5, bw - 0.7, 1.5, 2, 0.1);
+        }
+      });
+    }
+  }
+  ctx2.fillStyle = "rgba(40,40,40,0.35)";
+  ctx2.fillRect(-1, vb - 0.08, w2 + 2, 0.08);
+  if (k2.sign) {
+    ctx2.fillStyle = "#1f2a38";
+    ctx2.textBaseline = "middle";
+    ctx2.textAlign = "left";
+    ctx2.font = "600 0.9px system-ui, Arial";
+    ctx2.fillText(k2.sign.text, 0.8, 0.75);
+    if (k2.sign.sub) {
+      ctx2.font = "500 0.38px system-ui, Arial";
+      ctx2.fillText(k2.sign.sub, 0.85, 1.4);
+    }
+  }
+}
 function buildBlock(b2, others, seed) {
   const faces = [];
   const roofFaces = [];
@@ -43957,9 +44315,9 @@ function buildBlock(b2, others, seed) {
     const corners = blockCorners(b2, 0.15);
     const o3 = { ...corners[0], z: b2.eave };
     const W2 = 2 * (b2.hu + 0.15), H2 = 2 * (b2.hv + 0.15);
-    roofFaces.push(makeFace(o3, U3, V3v, [{ x: 0, y: 0 }, { x: W2, y: 0 }, { x: W2, y: H2 }, { x: 0, y: H2 }], (ctx2) => greenRoof(ctx2, W2, H2, seed), { ambient: 0.72 }));
+    roofFaces.push(makeFace(o3, U3, V3v, [{ x: 0, y: 0 }, { x: W2, y: 0 }, { x: W2, y: H2 }, { x: 0, y: H2 }], (ctx2) => b2.wing.roof === "white" ? whiteRoof(ctx2, W2, H2) : greenRoof(ctx2, W2, H2, seed), { ambient: 0.72 }));
     roofFaces.push(makeFace({ ...corners[3], z: b2.eave + 0.3 }, U3, { x: 0, y: 0, z: -1 }, [{ x: 0, y: 0 }, { x: W2, y: 0 }, { x: W2, y: 0.32 }, { x: 0, y: 0.32 }], (ctx2) => {
-      ctx2.fillStyle = DARK;
+      ctx2.fillStyle = b2.wing.roof === "white" ? "#f6f6f2" : DARK;
       ctx2.fillRect(0, 0, W2, 1);
     }, { noShade: true }));
   } else {
@@ -47922,14 +48280,14 @@ var WeatherFx = class {
   constructor() {
     const W = cam.W, H2 = cam.H, k2 = cam.RS;
     this.clouds = new TilingSprite({ texture: Texture.from(cloudTile(Math.round(1400 * k2), 5)), width: W, height: H2 });
-    this.tint = new Sprite3(Texture.WHITE);
+    this.tint = new Sprite4(Texture.WHITE);
     this.tint.width = W;
     this.tint.height = H2;
     this.tint.tint = 1845818;
     this.fog = new TilingSprite({ texture: Texture.from(cloudTile(Math.round(1100 * k2), 9, true)), width: W, height: H2 });
     this.rainA = new TilingSprite({ texture: Texture.from(rainTile(Math.round(512 * k2), 3, 160, 26 * k2)), width: W, height: H2 });
     this.rainB = new TilingSprite({ texture: Texture.from(rainTile(Math.round(384 * k2), 7, 90, 40 * k2)), width: W, height: H2 });
-    this.flash = new Sprite3(Texture.WHITE);
+    this.flash = new Sprite4(Texture.WHITE);
     this.flash.width = W;
     this.flash.height = H2;
     this.flash.tint = 15266047;
@@ -48042,7 +48400,7 @@ var PixiStage = class {
     cv.id = "pixi";
     cv.style.cssText = "position:absolute;inset:0;width:3840px;height:2160px;";
     host.insertBefore(cv, before);
-    const g2 = new Sprite3(Texture.from(ground2));
+    const g2 = new Sprite4(Texture.from(ground2));
     this.app.stage.addChild(g2);
     this.world.sortableChildren = true;
     this.app.stage.addChild(this.world);
@@ -48069,7 +48427,7 @@ var PixiStage = class {
     mk(waveTile(3, tileSize, 120, "215,240,240"), 0.55, 5 * cam.RS, 1.6 * cam.RS, 0.62);
     mk(waveTile(9, Math.round(tileSize * 0.75), 90, "190,225,230"), 0.45, -3.5 * cam.RS, 2.4 * cam.RS, 0.55);
     mk(glintTile(17, tileSize), 0.9, 2 * cam.RS, -1 * cam.RS, 0.7, 1);
-    const m2 = new Sprite3(Texture.from(mask.canvas));
+    const m2 = new Sprite4(Texture.from(mask.canvas));
     layer.addChild(m2);
     layer.mask = m2;
     this.app.stage.addChildAt(layer, 1);
@@ -48087,9 +48445,9 @@ var PixiStage = class {
     const [r2, h2] = o2.box ?? [2, 2];
     const s2 = P(o2.at.x, o2.at.y);
     const w2 = Math.ceil(2 * r2 * cam.S) + 8;
-    const up2 = Math.ceil(h2 * cam.S * cam.CE + r2 * cam.S * cam.SE) + 4;
+    const up3 = Math.ceil(h2 * cam.S * cam.CE + r2 * cam.S * cam.SE) + 4;
     const down = Math.ceil(r2 * cam.S * cam.SE) + 4;
-    return { x: Math.floor(s2.x - w2 / 2), y: Math.floor(s2.y - up2), w: w2, h: up2 + down };
+    return { x: Math.floor(s2.x - w2 / 2), y: Math.floor(s2.y - up3), w: w2, h: up3 + down };
   }
   raster(e2, o2, t2) {
     const b2 = this.boxOf(o2);
@@ -48172,7 +48530,7 @@ var PixiStage = class {
       const k2 = o2.id ?? o2;
       let e2 = this.entries.get(k2);
       if (!e2) {
-        e2 = { sp: new Sprite3(), seen: 0 };
+        e2 = { sp: new Sprite4(), seen: 0 };
         if (o2.img) {
           e2.sp.texture = this.texOf(o2.img.canvas);
           e2.sp.position.set(o2.img.x, o2.img.y);
@@ -48688,15 +49046,27 @@ async function buildScene() {
   const dynamicSprites = [];
   const houseFoot = /* @__PURE__ */ new Map();
   let built = 0;
+  const waterMask2 = new Mask(net.bounds.w, net.bounds.h);
+  for (const w2 of sector.terrain.water) waterMask2.poly(w2.map(W));
+  waterMask2.freeze();
+  const unitW = new Map(sector.houses.map((x2) => [x2.number, x2.footprintPts ? x2.footprintPts * sector.metersPerPt : void 0]));
+  const waterBehind = (h2) => {
+    for (let d2 = 3; d2 <= 24; d2 += 0.5) {
+      const x2 = h2.pos.x - h2.front.x * d2, y2 = h2.pos.y - h2.front.y * d2;
+      if (x2 > 0 && y2 > 0 && x2 < net.bounds.w && y2 < net.bounds.h && waterMask2.blocked(x2, y2)) return d2 / (h2.scale ?? 1);
+    }
+    return void 0;
+  };
   for (const h2 of net.houses) {
     if (++built % 40 === 0) await pause();
-    const v0 = variantFor(h2.legendType, h2.number);
-    houseFoot.set(h2.id, { pos: h2.pos, rad: (Math.max(v0.W + (v0.annex ? 3 : 0), v0.D) / 2 + 4.2) * (h2.scale ?? 1) });
+    const sz = houseSize(h2.legendType, unitW.get(h2.number), h2.number);
+    houseFoot.set(h2.id, { pos: h2.pos, rad: (Math.max(sz.W + (sz.annex ? 3 : 0), sz.D) / 2 + 4.2) * (h2.scale ?? 1) });
     if (!inView(h2.pos.x, h2.pos.y, 40)) {
       houseAnchor.set(h2.id, P(h2.pos.x, h2.pos.y, 9));
       continue;
     }
-    const b2 = buildHouse({ number: h2.number, legendType: h2.legendType, x: h2.pos.x, y: h2.pos.y, rot: h2.rotation, focus: h2.focus, scale: h2.scale });
+    const spec = { number: h2.number, legendType: h2.legendType, x: h2.pos.x, y: h2.pos.y, rot: h2.rotation, focus: h2.focus, scale: h2.scale };
+    const b2 = isVilla(h2.legendType) ? buildVilla({ ...spec, waterBack: waterBehind(h2) }) : isTerraced(h2.legendType) ? buildTerraced({ ...spec, unitW: unitW.get(h2.number) }) : buildHouse(spec);
     dynamicSprites.push(b2.sprite);
     shadows.push(b2.shadow);
     houseAnchor.set(h2.id, b2.sprite.anchor);
@@ -49309,14 +49679,14 @@ function loop(ts) {
   frameStamp = tNow;
   const t0 = performance.now();
   try {
-    frame();
+    frame2();
   } finally {
     lastFrameCost = performance.now() - t0;
     stats.tick(dtMs, lastFrameCost);
   }
   requestAnimationFrame(loop);
 }
-function frame() {
+function frame2() {
   const ctx2 = document.getElementById("world").getContext("2d");
   const now = (frameStamp || performance.now()) / 1e3;
   ctx2.setTransform(1, 0, 0, 1, 0, 0);

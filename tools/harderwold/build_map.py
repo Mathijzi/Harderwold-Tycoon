@@ -364,13 +364,21 @@ def nearest_road(p):
             if d < best[0]: best = (d, q)
     return best
 
+def front_deg(u, box_ang):
+    """front = towards the nearest street, snapped to the axes of the plot label (plots are rectangular)"""
+    want = math.degrees(math.atan2(u[1], u[0]))
+    cands = [box_ang + 90 * q for q in range(4)]
+    best = min(cands, key=lambda c: abs((c - want + 180) % 360 - 180))
+    return round(best % 360, 1)
+
 park_houses, clusters = [], []
 for h in sorted(houses, key=lambda h: h['num']):
     b = h['b']; p = np.array([b['cx'], b['cy']])
     d, q = nearest_road(p)
     park_houses.append({'id': f"H{h['num']}", 'number': h['num'], 'label': h['text'], 'pt': [round(b['cx'], 1), round(b['cy'], 1)],
                         'legendType': '8V', 'typeConfidence': 'high' if b['score'] > 0.85 or h['text'] in fixed.values() else 'medium',
-                        'pdfRotationDeg': round(b['ang'], 1), 'petsAllowed': h['num'] % 5 == 0, 'footprintPts': 60})
+                        'pdfRotationDeg': round(b['ang'], 1), 'petsAllowed': h['num'] % 5 == 0, 'footprintPts': 60,
+                        'frontDeg': front_deg(q - p, b['ang'])})
     u = (q - p) / max(1, d)
     cp = q - u * 22  # just inside the plot, at the road
     clusters.append({'id': f"P{h['num']}", 'kind': 'house', 'pt': [round(cp[0], 1), round(cp[1], 1)], 'stalls': 1, 'serves': [h['num']],
@@ -385,7 +393,7 @@ for b, (lo, hi) in block_list:
     for k in range(n):
         c = p + u * (k - (n - 1) / 2) * span / n
         park_houses.append({'id': f'H{lo + k}', 'number': lo + k, 'label': str(lo + k), 'pt': [round(c[0], 1), round(c[1], 1)], 'legendType': '4G',
-                            'typeConfidence': 'medium', 'pdfRotationDeg': round(b['ang'], 1), 'petsAllowed': False, 'footprintPts': round(span / n, 1),
+                            'typeConfidence': 'medium', 'pdfRotationDeg': round(b['ang'], 1), 'petsAllowed': False, 'footprintPts': round(span / n, 1), 'frontDeg': front_deg(tow, b['ang']),
                             'note': f'geschakeld blok {lo}/{hi} (aanname: {n} woningen naast elkaar)'})
     cp = q - tow * 22
     # block 646/650 lies next to the bend of the forest-edge road: its parking strip goes on the straight part
@@ -425,12 +433,12 @@ massing = {
     'comment': 'Bouwmassa van de gebouwen (pt). Per vleugel: hoekpunten; goothoogte, dakvorm en gevelstijl zijn ARTISTIEKE AANNAMES (de PDF toont alleen vlakken en symbolen). Fase 2 vervangt dit door Harderwold-architectuur.',
     'rotationDeg': 0,
     'wings': [
-        {'id': 'HART', 'name': 'Brasserie Harderwold & receptie', 'facilities': ['A', 'G', 'J', 'V'], 'corners': rect(1716, 1707, 1866, 1905), 'eaveM': 4.2, 'roof': 'green', 'style': 'brasserie', 'terrace': True, 'sign': {'text': 'Harderwold', 'sub': 'Receptie  ·  Brasserie'}},
-        {'id': 'DR', 'name': 'Driving range', 'facilities': ['R'], 'corners': rect(1881, 1527, 2146, 1582), 'eaveM': 4.0, 'roof': 'green', 'style': 'hall'},
+        {'id': 'HART', 'name': 'Brasserie Harderwold & receptie', 'facilities': ['A', 'G', 'J', 'V'], 'corners': rect(1716, 1707, 1866, 1905), 'eaveM': 4.4, 'roof': 'white', 'style': 'modern', 'terrace': True, 'sign': {'text': 'Harderwold', 'sub': 'Receptie  ·  Brasserie'}},
+        {'id': 'DR', 'name': 'Driving range', 'facilities': ['R'], 'corners': rect(1881, 1527, 2146, 1582), 'eaveM': 4.0, 'roof': 'white', 'style': 'modern'},
         {'id': 'WERF', 'name': 'De werf', 'facilities': ['I'], 'corners': rect(1355, 2914, 1485, 3086), 'eaveM': 5.0, 'pitchDeg': 22, 'ridge': 'v', 'style': 'workshop', 'sign': {'text': 'De werf'}},
         {'id': 'LOODS', 'name': 'De loods', 'facilities': ['M'], 'corners': rect(4609, 2987, 4736, 3055), 'eaveM': 4.5, 'pitchDeg': 20, 'ridge': 'u', 'style': 'workshop'},
-        {'id': 'APP1', 'name': 'Appartementen', 'facilities': ['N'], 'corners': rot_rect(3762, 2112, 430, 62, 45), 'eaveM': 7.5, 'roof': 'green', 'style': 'hall', 'rotationDeg': 45},
-        {'id': 'APP2', 'name': 'Appartementen', 'facilities': ['N'], 'corners': rot_rect(3762, 2112, 430, 62, -45), 'eaveM': 7.5, 'roof': 'green', 'style': 'link', 'rotationDeg': -45},
+        {'id': 'APP1', 'name': 'Appartementen', 'facilities': ['N'], 'corners': rot_rect(3762, 2112, 430, 62, 45), 'eaveM': 7.5, 'roof': 'white', 'style': 'modern', 'rotationDeg': 45},
+        {'id': 'APP2', 'name': 'Appartementen', 'facilities': ['N'], 'corners': rot_rect(3762, 2112, 430, 62, -45), 'eaveM': 7.5, 'roof': 'white', 'style': 'modern', 'rotationDeg': -45},
     ],
 }
 structures = [

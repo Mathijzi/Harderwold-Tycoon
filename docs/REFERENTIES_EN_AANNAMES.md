@@ -72,7 +72,8 @@ De map `work/` staat niet in git; alle stappen zijn opnieuw te draaien. Daarna c
   - Blok 625/630 telt zes woningen; in totaal zijn dat 56 woningen in 11 blokken.
   - Elk blok heeft een eigen parkeerstrook.
 - **Parkeren:** elke villa heeft een eigen parkeervak aan de straatkant van de kavel.
-- **Huistype:** voorlopig “8V” (villa) en “4G” (geschakeld). In fase 2 komen de Harderwold-villa's: wit, plat dak, glaspuien, terras, zwembad en steiger.
+- **Huistype:** “8V” (villa) en “4G” (geschakeld). De bouwers staan in `src/web/projector/villas.ts`; de maten komen uit `src/shared/house.ts` (`villaVariant`, `houseSize`), zodat simulatie en tekening altijd kloppen.
+- **Voorkant:** naar de dichtstbijzijnde straat, uitgelijnd op het kavelvak (`frontDeg` in `park.json`).
 - **Aantal:** 283 villa's + 56 geschakelde woningen = **339**.
 
 ### Voorzieningen en gebouwen
@@ -117,3 +118,27 @@ De map `work/` staat niet in git; alle stappen zijn opnieuw te draaien. Daarna c
   - Het accent is oranje `#cc7400`.
   - In de beheerpagina's is het accent `#a85e00` in het lichte thema (leesbaar met witte tekst) en `#f0a040` in het donkere thema.
 - **Logo:** de opdrachtgever wil het echte logo in beeld (het spel wordt voor de eigenaar gemaakt). Het staat nog niet in het spel, omdat de automatische permissiecontrole het inbouwen tegenhield. Tot dat geregeld is, staat er een eigen neutraal embleem. Witte en donkere versies staan klaar in `references/huisstijl/gegenereerd/` (lokaal).
+
+### Villa's en gebouwen (fase 2, 16 oktober 2026)
+Stijl volgens `references/fotos`. Varianten worden vast per huisnummer gekozen.
+
+**Villa's**
+- **Maten:** 10,5–13,5 × 9–10 m.
+- **Verdiepingen:** 72% heeft er twee; de bovenverdieping is kleiner en zit naar één kant geschoven, met een balkon met zwarte balustrade op de dakrand.
+- **Dak:** plat, met een brede witte overstek (1,6 m boven het terras). Op 65% liggen zonnepanelen.
+- **Gevel:** zwarte kozijnen; grote glaspuien aan de waterkant, de voordeur aan de straat.
+- **Tuin:**
+  - een terras van grote grijze tegels van 5,5 m aan de waterkant;
+  - in 42% van de gevallen een zwembad met ligbedden, anders een tuintafel;
+  - hagen langs de zijkanten.
+- **Steiger:** een houten steiger van het terras tot ruim 4 m in de gracht. De lengte volgt uit het water achter het huis. In 35% van de gevallen ligt er een kano of SUP naast.
+
+**Geschakelde woningen (600–655)**
+- Wit, twee lagen, plat dak.
+- Elke woning is precies zijn deel van het blok breed, zodat de woningen tegen elkaar aan staan.
+- Een klein terras met een donker tuinscherm.
+- Voor de vrije-ruimtecontrole is de woning smaller dan getekend, zodat de simulatie de woningen niet uit elkaar duwt.
+
+**Overige gebouwen**
+- **Hart, driving range en appartementen:** moderne stijl. Witte gevels met verdiepingshoge zwarte puien en strookramen boven, een licht plat dak met witte rand, en zonnepanelen op grote daken.
+- **De werf en De loods:** houden een werkplaatsdak.
