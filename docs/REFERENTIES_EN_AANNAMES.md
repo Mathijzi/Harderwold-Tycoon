@@ -78,7 +78,7 @@ De map `work/` staat niet in git; alle stappen zijn opnieuw te draaien. Daarna c
 
 ### Voorzieningen en gebouwen
 - **Pictogrammen:** zijn met de hand op de plek van het pictogram op de plattegrond gezet.
-- **Letters:** zijn tijdelijk gekoppeld aan de opdrachten van de basis, tot fase 3:
+- **Letters:** de opdrachten (fase 3) gebruiken de Harderwold-legenda:
 
   | Letter | Voorziening |
   |---|---|
@@ -86,25 +86,26 @@ De map `work/` staat niet in git; alle stappen zijn opnieuw te draaien. Daarna c
   | G | Brasserie Harderwold |
   | H | Terras |
   | J | Toiletten & douches |
-  | S | Speeltuinen |
   | V | Winkeltje bij de receptie |
   | W | Fietsen bij de receptie |
   | R | Driving range |
-  | Z | Jeu-de-boules |
   | U | Adventure golf |
   | O | 9-holes golfbaan |
   | L | Bosgolf |
-  | T | Lasergame |
-  | C | Boogschieten |
-  | Y | Outdoor baan |
   | Q | Tennisbaan |
+  | S | Speeltuinen |
+  | Z | Jeu-de-boules |
+  | CP | Camperplaatsen |
+  | N | Residentie Harderwold |
   | I | De werf |
   | M | De loods |
-  | N | Appartementen |
-  | E | AED |
+  | D | Milieustraat |
+  | K | Stort chemisch toilet |
+  | EV | Laden |
   | X | Afval |
+  | E | AED |
 
-  Nieuw zonder opdrachten: CP (camperplaatsen), WB (woonboten), D (milieustraat), F (trailerstalling), K (stort chemisch toilet), B5 (brievenbus), P (parkeren), EV (laden).
+  Lasergame (T), boogschieten (C), de outdoor baan (Y) en de woonboten (WB) liggen buiten beeld. Ze staan wel op de kaart, maar krijgen voorlopig geen opdrachten.
 - **Gebouwen** (`massing`): voorlopige blokken met de vormen van de basis. Fase 2 vervangt ze door Harderwold-architectuur.
   - brasserie en receptie, met terras;
   - driving range;
@@ -150,3 +151,40 @@ Stijl volgens `references/fotos`. Varianten worden vast per huisnummer gekozen.
   - Het midden en de armlengte komen uit de plattegrond (`apartments` in `park.json`). Het gebouw bestaat uit vijf delen (midden en vier armen), zodat de dieptevolgorde klopt.
 - **Hart en driving range:** moderne stijl. Witte gevels met verdiepingshoge zwarte puien en strookramen boven, een licht plat dak met witte rand, en zonnepanelen op grote daken.
 - **De werf en De loods:** houden een werkplaatsdak.
+
+### Opdrachten en gasten (fase 3, 16 oktober 2026)
+
+**Opdrachten** (`src/shared/tasklib.ts`): 122 inplanbare opdrachten in 10 groepen.
+
+| Groep | Waar het over gaat |
+|---|---|
+| Onderhoud | Technische dienst in de villa's: warmtepomp, privezwembad, jacuzzi, sauna, schuifpui, domotica, zonnepanelen |
+| Schoonmaak | Villa's, glaspuien, buitenkeuken, blad in het zwembad, sanitair bij het hart |
+| Receptie | Sleutelkaarten, boekingen, pakketjes, starttijden op de golfbaan, laadpalen |
+| Horeca | Brasserie Harderwold en het terras, ontbijt- en wijnservice aan de villa |
+| Golf | Greens, bunkers, vlaggen, driving range, adventure golf, golfkarren |
+| Water & steigers | Steigers, sloepen, kano's, SUP's, reddingsboeien, kroos en zwerfvuil in de grachten |
+| Terrein | Wegen, hagen, gazons, lantaarns, afvalpunten, milieustraat, laadpalen, stortplaats |
+| Natuur | Eenden, zwanen, reigers, konijnen op de green, padden, egels |
+| Recreatie | Tennis, speeltuinen, jeu-de-boules, camperplaatsen, Residentie Harderwold |
+| Chaos | Opblaasflamingo's, drones, feestsloepen, golfballen in de brievenbus |
+
+- Het weer stuurt de groepen. Bij zon zijn er meer opdrachten op het water en op de golfbaan; bij regen en onweer veel minder.
+
+**Crises:** waterleiding, stroomstoring, incheckchaos, blauwalg in de grachten, sloepen op drift, onweer, brandalarm in de brasserie, pers bij de slagboom, wifi-storing op het schrijverskamp en een vol parkeerterrein.
+
+**Gasten** (`src/shared/guestlib.ts`, opdrachtgever 15-10-2026). Er zijn drie soorten gezelschappen:
+- **Gewone Nederlandse families** (50%), soms met opa en oma.
+- **Artiesten op schrijverskamp** (25%): een zanger, songwriter of producer met co-schrijvers, die werken aan een nummer of album voor een label.
+- **Vermogende gasten** (25%): een ondernemer, investeerder, directeur, chirurg of advocaat met gezin.
+
+Alle ingebouwde artiesten, labels, bedrijven en vermogende families zijn **verzonnen**. Echte bekende gasten komen alleen in het spel als de spelleider ze in `/admin` toevoegt, met hun toestemming. Zij krijgen alleen vriendelijke verhaallijnen.
+
+**Verhaallijnen** (16):
+
+| Gezelschap | Verhaallijnen |
+|---|---|
+| Schrijverskamp | Schrijverskamp in de villa, thuisstudio, inspiratie op de steiger, deadline, luistersessie, verloren notitieboek |
+| Vermogend | Privekok, eigen boot, zakendeal op de golfbaan, poolparty, kunstwerk |
+| Families | Oma wordt 80, opa leert golfen, kano op avontuur, ruzie over de haag (nooit voor echte personen) |
+| Bekende gast (cameo) | Een algemene verhaallijn voor bekende gasten |

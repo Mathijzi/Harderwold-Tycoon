@@ -10,7 +10,7 @@ type Task = {
   queuePosition?: number; attempt: number; icon: string; locationId: string | null;
   technician?: { phase: string; onSite: boolean; vehicleId: string | null; houseNumber: number } | null;
 };
-const TECH_PHASE: Record<string, string> = { pending: 'wacht op een vrije golfkar', driving: 'rijdt naar de bungalow', working: 'loopt naar binnen', walking_back: 'loopt terug', returning: 'rijdt terug' };
+const TECH_PHASE: Record<string, string> = { pending: 'wacht op een vrije golfkar', driving: 'rijdt naar de villa', working: 'loopt naar binnen', walking_back: 'loopt terug', returning: 'rijdt terug' };
 const techBlocked = (t: Task) => !!t.technician && !t.technician.onSite;
 const isTd = (t: Task) => t.kind === 'incident' && (t.category === 'Onderhoud' || t.category === 'Natuur') && !!t.locationId?.startsWith('H');
 type Player = { id: string; displayName: string; score: number; isTest: number };
@@ -146,7 +146,7 @@ function App() {
         <div className="meta">
           {t.gateId && <span>slagboom <code>{t.gateId}</code> · voertuig <code>{t.vehicleId}</code>{t.queuePosition ? ` · positie ${t.queuePosition} in rij` : ''}</span>}
           <span>status <b>{t.state}</b>{t.assignedPlayerName ? ` door ${t.assignedPlayerName}` : ''}{left !== null ? ` · deadline ${Math.floor(left / 60)}:${String(left % 60).padStart(2, '0')}` : ''}{t.attempt > 1 ? ` · poging ${t.attempt}` : ''}</span>
-          {t.technician && <span className={t.technician.onSite ? 'tdok' : 'warn'}>{t.technician.onSite ? `Monteur is ter plaatse in bungalow ${houseLabel(t.technician.houseNumber)}: je kunt afronden` : `Monteur ${TECH_PHASE[t.technician.phase] ?? t.technician.phase}${t.technician.vehicleId ? ` (${t.technician.vehicleId})` : ''}: afronden kan pas als hij er is`}</span>}
+          {t.technician && <span className={t.technician.onSite ? 'tdok' : 'warn'}>{t.technician.onSite ? `Monteur is ter plaatse in villa ${houseLabel(t.technician.houseNumber)}: je kunt afronden` : `Monteur ${TECH_PHASE[t.technician.phase] ?? t.technician.phase}${t.technician.vehicleId ? ` (${t.technician.vehicleId})` : ''}: afronden kan pas als hij er is`}</span>}
         </div>
         <div className="btns">
           {t.state === 'offered' && <button onClick={() => act(t, 'claim')} disabled={!session}>Claimen</button>}
@@ -244,7 +244,7 @@ function GuestsPanel({ stories, bookings }: { stories: any[]; bookings: any[] })
       {stories.length === 0 && <p className="muted">Nog geen verhaallijnen. Ze starten overdag vanzelf, of via "+1 verhaal".</p>}
       {stories.map((s) => (
         <div key={s.id} className="task">
-          <b>{s.title}</b> · bungalow {s.houseNumber} · {s.household} · <span className={s.state === 'failed' ? 'err' : s.state === 'completed' ? 'ok' : ''}>{STORY_STATE[s.state] ?? s.state}</span>
+          <b>{s.title}</b> · villa {houseLabel(s.houseNumber)} · {s.household} · <span className={s.state === 'failed' ? 'err' : s.state === 'completed' ? 'ok' : ''}>{STORY_STATE[s.state] ?? s.state}</span>
           <div className="muted">{s.intro}</div>
           {s.state === 'active' && <div>Deel {s.chapter}/{s.chapters}: {s.chapterText ?? 'start zo'}{s.taskId ? ' (opdracht staat bij Incidenten)' : ' (volgende deel volgt zo)'}</div>}
           {s.endText && <div><i>{s.endText}</i></div>}

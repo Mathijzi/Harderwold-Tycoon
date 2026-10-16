@@ -1,123 +1,139 @@
-// Guests and storylines for a media event. Households are well-known Dutch presenters and artists (real public
-// figures, used with the organiser's permission) with their travel companions; when all of them are in the park the
-// rest are ordinary families. Real people only get friendly, harmless storylines: no invented scandals, feuds or
-// private matters (storylines that would put words or conflicts on a real person carry noRealPeople). Programmes and
-// broadcasters in the copy are fictional. A storyline is a short multi-chapter arc around one household whose
-// chapters are ordinary claimable tasks (story-only templates in tasklib). Pure data + generation: the game runs
-// the arcs (src/server/stories.ts).
+// Guests and storylines for Harderwold. Three kinds of households (client, 15-10-2026):
+//  - ordinary Dutch families (with kids, grandparents);
+//  - artists on a songwriting camp: a writing team around a singer-songwriter or producer, working on a song or an
+//    album for a (fictional) label;
+//  - well-to-do guests: entrepreneurs, investors, a surgeon, a lawyer, with partner and kids.
+// All built-in artists and wealthy guests are FICTIONAL. Real people only appear when the game master adds them as
+// a cameo in /admin (with their permission); they then only get friendly, harmless storylines (no invented conflicts:
+// storylines with noRealPeople never pick them). A storyline is a short multi-chapter arc around one household whose
+// chapters are ordinary claimable tasks (story-only templates in tasklib). Pure data + generation: the game runs the
+// arcs (src/server/stories.ts).
 import { Effect } from './tasklib.ts';
 
 export type Role =
-  | 'presentator' | 'nieuwslezer' | 'weerpresentator' | 'radio-dj' | 'quizmaster' | 'realityster' | 'vlogger'
-  | 'producent' | 'regisseur' | 'cameraman' | 'geluidstechnicus' | 'visagist' | 'omroepdirecteur' | 'talkshowgast'
-  | 'soapacteur' | 'stagiair' | 'jingleproducent' | 'columnist' | 'artiest' | 'cabaretier'
+  | 'zanger' | 'songwriter' | 'producer' | 'muzikant' | 'manager'
+  | 'ondernemer' | 'investeerder' | 'directeur' | 'chirurg' | 'advocaat'
   | 'partner' | 'kind' | 'opa' | 'oma';
-export const MEDIA_ROLES: Role[] = ['presentator', 'nieuwslezer', 'weerpresentator', 'radio-dj', 'quizmaster', 'realityster', 'vlogger', 'producent', 'regisseur', 'cameraman', 'geluidstechnicus', 'visagist', 'omroepdirecteur', 'talkshowgast', 'soapacteur', 'stagiair', 'jingleproducent', 'columnist', 'artiest', 'cabaretier'];
+/** roles that can lead a household (and that a cameo guest added in /admin may have) */
+export const GUEST_ROLES: Role[] = ['zanger', 'songwriter', 'producer', 'muzikant', 'manager', 'ondernemer', 'investeerder', 'directeur', 'chirurg', 'advocaat'];
+export const ARTIST_ROLES: Role[] = ['zanger', 'songwriter', 'producer', 'muzikant'];
+export const WEALTHY_ROLES: Role[] = ['ondernemer', 'investeerder', 'directeur', 'chirurg', 'advocaat'];
 export const ROLE_NAMES: Record<Role, string> = {
-  presentator: 'presentator', nieuwslezer: 'nieuwslezer', weerpresentator: 'weerpresentator', 'radio-dj': 'radio-dj', quizmaster: 'quizmaster',
-  realityster: 'realityster', vlogger: 'vlogger', producent: 'producent', regisseur: 'regisseur', cameraman: 'cameraman',
-  geluidstechnicus: 'geluidstechnicus', visagist: 'visagist', omroepdirecteur: 'omroepdirecteur', talkshowgast: 'vaste talkshowgast',
-  soapacteur: 'soapacteur', stagiair: 'stagiair', jingleproducent: 'jingleproducent', columnist: 'columnist', artiest: 'artiest', cabaretier: 'cabaretier',
+  zanger: 'zanger', songwriter: 'songwriter', producer: 'producer', muzikant: 'muzikant', manager: 'manager',
+  ondernemer: 'ondernemer', investeerder: 'investeerder', directeur: 'directeur', chirurg: 'chirurg', advocaat: 'advocaat',
   partner: 'partner', kind: 'kind', opa: 'opa', oma: 'oma',
 };
 
-/** 0 = nobody knows them, 1 = local celebrity, 2 = household name (BN'er) */
+export type HouseholdKind = 'familie' | 'artiest' | 'vermogend';
+export const KIND_NAMES: Record<HouseholdKind, string> = { familie: 'familie', artiest: 'schrijverskamp', vermogend: 'vermogende gasten' };
+
+/** 0 = nobody knows them, 1 = known in their world, 2 = well known (cameo added by the game master) */
 export type Fame = 0 | 1 | 2;
-export const FAME_NAMES = ['onbekend', 'bekend in het Gooi', 'bekende Nederlander'];
+export const FAME_NAMES = ['onbekend', 'bekend in de branche', 'bekende Nederlander'];
 
 export interface Guest { name: string; role: Role; trait: string; color: string }
 export interface Household {
-  name: string; omroep: string; show: string; fame: Fame;
+  name: string; kind: HouseholdKind;
+  /** artists: the (fictional) record label; wealthy guests: their (fictional) company; families: '' */
+  label: string;
+  /** artists: what they are writing; wealthy guests: what brings them here; families: '' */
+  project: string;
+  fame: Fame;
   /** short one-line profile for the test client and the projector */
   tagline: string;
-  /** key of a real public figure (BN list or a cameo added in /admin) */
+  /** key of a cameo guest added by the game master in /admin (a real person) */
   celebrity?: string;
 }
 
-// ---------------------------------------------------------------- well-known Dutch presenters and artists
+// ---------------------------------------------------------------- cameo guests (game master, /admin)
 export interface Cameo { key: string; name: string; role: Role; tagline: string; companions: Role[] }
-const slugOf = (s: string) => s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
-const TAG: Partial<Record<Role, string>> = {
-  presentator: 'presentator', quizmaster: 'quizmaster', 'radio-dj': 'radio-dj', nieuwslezer: 'nieuwslezer', weerpresentator: 'weerpresentator',
-  vlogger: 'vlogger', artiest: 'artiest', cabaretier: 'cabaretier', producent: 'tv-producent',
-};
-const COMPANIONS: Role[][] = [['partner'], ['partner', 'kind'], ['partner', 'kind', 'kind'], ['partner'], ['partner', 'oma']];
-const bn = (role: Role, names: string[]): Cameo[] => names.map((name, i) => ({ key: slugOf(name), name, role, tagline: `${name}, ${TAG[role] ?? ROLE_NAMES[role]}, is een paar dagen op vakantie`, companions: COMPANIONS[i % COMPANIONS.length] }));
-/** BN'ers (organiser has permission to use their names). Keep everything written about them kind and harmless. */
-export const CELEBRITIES: Cameo[] = [
-  { key: 'john-de-mol', name: 'John de Mol', role: 'producent', tagline: 'John de Mol, tv-producent, is een weekje op vakantie', companions: ['partner'] },
-  { key: 'andre-van-duin', name: 'André van Duin', role: 'presentator', tagline: 'André van Duin, entertainer, geniet van een paar dagen rust', companions: ['partner'] },
-  ...bn('presentator', ['Linda de Mol', 'Chantal Janzen', 'Humberto Tan', 'Wendy van Dijk', 'Martijn Krabbé', 'Caroline Tensen', 'Beau van Erven Dorens', 'Tijl Beckand', 'Art Rooijakkers', 'Ivo Niehe', 'Henny Huisman', 'Paul de Leeuw', 'Kees Tol', 'Rick Brandsteder', 'Nicolette Kluijver', 'Dionne Stax', 'Sophie Hilbrand', 'Tooske Ragas', 'Bridget Maasland', 'Eva Jinek', 'Jeroen Pauw']),
-  ...bn('quizmaster', ['Herman van der Zandt', 'Philip Freriks', 'Frits Sissing']),
-  ...bn('radio-dj', ['Edwin Evers', 'Giel Beelen', 'Gerard Ekdom', 'Coen Swijnenberg', 'Sander Lantinga', 'Frank Dane', 'Domien Verschuuren', 'Rob Stenders']),
-  ...bn('nieuwslezer', ['Rob Trip', 'Annechien Steenhuizen']),
-  ...bn('weerpresentator', ['Peter Timofeeff', 'Helga van Leur', 'Marco Verhoef']),
-  ...bn('vlogger', ['Enzo Knol', 'Dylan Haegens', 'Monica Geuze']),
-  ...bn('artiest', ['Jan Smit', 'Frans Bauer', 'Guus Meeuwis', 'Ilse DeLange', 'Waylon', 'Davina Michelle', 'Rob Kemps', 'Anouk', 'Trijntje Oosterhuis', 'Duncan Laurence', 'S10', 'Rolf Sanchez', 'Diggy Dex', 'Douwe Bob', 'Danny Vera', 'Nick Schilder', 'Simon Keizer', 'René Froger', 'Gerard Joling', 'Jeroen van der Boom', 'Dinand Woesthoff', 'Hans Klok', 'Jamai Loman', 'Kenny B', 'Maan', 'Snelle', 'Tino Martin']),
-  ...bn('cabaretier', ['Najib Amhali', "Youp van 't Hek", 'Claudia de Breij', 'Theo Maassen', 'Brigitte Kaandorp', 'Freek de Jonge', 'Guido Weijers', 'Jochem Myjer', 'Hans Teeuwen', 'Arjen Lubach']),
-];
-/** share of arriving households that is a BN'er (as long as there are BN'ers not yet in the park) */
-export const CELEBRITY_SHARE = 0.85;
+/** Built-in list of real public figures: empty. The game master can add cameo guests (with their permission). */
+export const CELEBRITIES: Cameo[] = [];
+/** share of arriving households that is a cameo guest, as long as there are cameos not yet in the park */
+export const CELEBRITY_SHARE = 0.3;
 
-/** Names and cameo guests added by the game master (/admin, stored in the database). Cameos join the BN pool. */
+/** Names and cameo guests added by the game master (/admin, stored in the database). */
 export const customNames: { first: string[]; surnames: string[]; kids: string[]; cameos: Cameo[] } = { first: [], surnames: [], kids: [], cameos: [] };
 export function setCustomNames(n: Partial<typeof customNames>) {
   customNames.first = [...(n.first ?? [])]; customNames.surnames = [...(n.surnames ?? [])]; customNames.kids = [...(n.kids ?? [])]; customNames.cameos = [...(n.cameos ?? [])];
 }
 
-// ---------------------------------------------------------------- fictional programmes and broadcasters (story copy)
-export const OMROEPEN = [
-  'Omroep Heidebloem', 'Gooise Golf FM', 'Zendmast 3', 'Studio Lage Vuursche', 'Omroep De Kijkbuis', 'Radio Mediapark Noord',
-  'Kanaal Kortenhoef', 'Omroep Antenne & Co', 'Streamdienst Kijkgraag', 'Regio-tv Gooi Live',
+// ---------------------------------------------------------------- fictional artists, labels, companies (story copy)
+/** fictional singer-songwriters and producers (stage names) */
+export const ARTISTS: { name: string; role: Role }[] = [
+  { name: 'Mila Verbeek', role: 'zanger' }, { name: 'Jens Hoogland', role: 'songwriter' }, { name: 'Noa Brink', role: 'zanger' },
+  { name: 'Sam Lindeboom', role: 'producer' }, { name: 'Isa Vermeer', role: 'songwriter' }, { name: 'Ruben Calis', role: 'zanger' },
+  { name: 'Lotte Haverkamp', role: 'songwriter' }, { name: 'Daan Wolters', role: 'producer' }, { name: 'Femke Ridder', role: 'zanger' },
+  { name: 'Joep Arends', role: 'muzikant' }, { name: 'Zoë Kramer', role: 'songwriter' }, { name: 'Thijs Valk', role: 'zanger' },
+  { name: 'Anouk Brand', role: 'producer' }, { name: 'Milan de Smet', role: 'songwriter' }, { name: 'Elin Bosman', role: 'zanger' },
+  { name: 'Bas Overdijk', role: 'muzikant' }, { name: 'Roos Lanting', role: 'songwriter' }, { name: 'Victor Holst', role: 'producer' },
 ];
-export const SHOWS = [
-  'Goedemorgen Gooi', 'Het Vragenvuur', 'Bungalow Boys', 'De Jinglefabriek', 'Weer of Geen Weer', 'Talk van de Dag',
-  'Zendtijd!', 'Wie Wordt Weerman', 'Prime-Tijd Live', 'Achter de Autocue', 'Het Mediaparkjournaal', 'Kookstudio Kortenhoef',
-  'Zaterdagavondshow XL', 'De Soap aan de Vaart', 'Antennejagers',
-];
-/** ordinary Dutch surnames for the families that are not BN'ers */
+export const LABELS = ['Noorderlicht Records', 'Veluwe Music', 'Grachtengeluid', 'Polderpop', 'Studio Harderhaven', 'Lichtmast Muziek', 'Zuiderzee Songs', 'Kwartnoot Records'];
+export const SONG_PROJECTS = ['een nieuwe zomerhit', 'het tweede album', 'een filmsong', 'een duet', 'het songfestivalnummer', 'een kerstsingle', 'de titelsong van een serie', 'een akoestische ep'];
+export const COMPANIES = ['Nordwind Capital', 'Harder Holding', 'Veluwe Vastgoed', 'De Grachtenbank', 'Lindeboom & Partners', 'Zuiderhaven Logistiek', 'Kroonduin Advocaten', 'MedTech Elburg'];
+export const WEALTHY_PROJECTS = ['een golfweekend met zakenpartners', 'de verjaardag van de partner', 'een overname die bijna rond is', 'een weekje rust na een drukke maand', 'het jubileum van het bedrijf', 'een nieuw jacht dat ze willen uitproberen'];
+/** ordinary Dutch surnames (families) and double-barrelled fictional surnames (wealthy guests) */
 const SURNAMES = ['De Vries', 'Jansen', 'De Jong', 'Bakker', 'Visser', 'Meijer', 'De Boer', 'Mulder', 'De Groot', 'Bos', 'Vos', 'Peters', 'Hendriks', 'Van Dijk', 'Dekker', 'Brouwer', 'Kok', 'Jacobs', 'Van der Linden', 'Willems', 'Van den Berg', 'Verhoeven', 'Kuipers', 'Postma'];
+const POSH = ['Van Eckelen-Morel', 'Ten Velde-Hoorn', 'Van Asperen-Blom', 'De Wit-Lagerweij', 'Van Harteveld', 'Bosch van Drakestein-Kok', 'Van der Meulen-Staal', 'Ter Hoeve-Lindeman', 'Van Oosterzee', 'De Klerck-Huysman'];
 const FIRST = ['Sanne', 'Joost', 'Fleur', 'Bram', 'Noor', 'Daan', 'Lotte', 'Ruben', 'Eva', 'Thijs', 'Mila', 'Gijs', 'Saar', 'Teun', 'Jasmijn', 'Wouter', 'Merel', 'Koen', 'Floor', 'Sem'];
 const KIDS = ['Pien', 'Finn', 'Lieke', 'Mees', 'Juul', 'Siem', 'Bo', 'Tijn'];
 const OLD = { opa: ['Opa Henk', 'Opa Kees', 'Opa Wim'], oma: ['Oma Riek', 'Oma Truus', 'Oma Ans'] };
-const BN_TRAITS = ['spontaan', 'gezellig', 'altijd in voor een grap', 'perfectionist', 'praatgraag', 'nieuwsgierig', 'vroege vogel', 'stressbestendig'];
+const ARTIST_TRAITS = ['nachtmens', 'perfectionist', 'altijd een melodie in het hoofd', 'chaotisch', 'gezellig', 'nieuwsgierig', 'vroege vogel', 'koffieliefhebber'];
+const WEALTHY_TRAITS = ['veeleisend', 'gul met fooien', 'altijd aan de telefoon', 'golfliefhebber', 'zeer beleefd', 'houdt van stipt', 'gezellig', 'wijnkenner'];
 const PLAIN_TRAITS = ['geduldig', 'veeleisend', 'vergeetachtig', 'luidruchtig', 'vroege vogel', 'gezellig', 'nieuwsgierig', 'mopperig'];
 const CLOTHES = ['#d9534f', '#3a6ea5', '#f0ad4e', '#5cb85c', '#f7f7f2', '#7b5ea7', '#2b2b2b', '#e88aa8', '#46a5a0', '#c9a227'];
+/** share of the three kinds among households that are not cameo guests */
+export const KIND_SHARE: Record<HouseholdKind, number> = { familie: 0.5, artiest: 0.25, vermogend: 0.25 };
 
 type R = { next(): number; int(lo: number, hi: number): number; pick<T>(a: T[]): T };
 
-/** A new household (seeded). Mostly a BN'er with companions; `taken` = BN keys already in the park (each BN'er
- *  stays in at most one bungalow at a time). Otherwise an ordinary family with a normal Dutch surname. */
+/** A new household (seeded). `taken` = cameo keys already in the park (each cameo guest stays in at most one villa at a
+ *  time). Otherwise an ordinary family, a songwriting team or well-to-do guests (KIND_SHARE). */
 export function makeHousehold(r: R, taken: Set<string> = new Set()): { household: Household; guests: Guest[] } {
   const FIRST_ = [...FIRST, ...customNames.first], KIDS_ = [...KIDS, ...customNames.kids], SURN_ = [...SURNAMES, ...customNames.surnames];
-  const omroep = r.pick(OMROEPEN), show = r.pick(SHOWS);
-  const free = [...CELEBRITIES, ...customNames.cameos].filter((c) => !taken.has(c.key));
-  const companion = (role: Role, used: Set<string>): Guest => {
+  const used = new Set<string>();
+  const person = (role: Role, traits: string[]): Guest => {
     const pool = role === 'kind' ? KIDS_ : role === 'opa' ? OLD.opa : role === 'oma' ? OLD.oma : FIRST_;
     let name = r.pick(pool);
     for (let i = 0; i < 6 && used.has(name); i++) name = r.pick(pool);
     used.add(name);
-    return { name, role, trait: r.pick(PLAIN_TRAITS), color: r.pick(CLOTHES) };
+    return { name, role, trait: r.pick(traits), color: r.pick(CLOTHES) };
   };
+  const free = [...CELEBRITIES, ...customNames.cameos].filter((c) => !taken.has(c.key));
   if (free.length && r.next() < CELEBRITY_SHARE) {
     const c = r.pick(free);
-    const used = new Set<string>();
-    const guests: Guest[] = [{ name: c.name, role: c.role, trait: r.pick(BN_TRAITS), color: r.pick(CLOTHES) }, ...c.companions.map((role) => companion(role, used))];
-    return { household: { name: `Gezelschap ${c.name}`, omroep, show, fame: 2, tagline: c.tagline, celebrity: c.key }, guests };
+    const artist = ARTIST_ROLES.includes(c.role);
+    const guests: Guest[] = [{ name: c.name, role: c.role, trait: r.pick(artist ? ARTIST_TRAITS : WEALTHY_TRAITS), color: r.pick(CLOTHES) }, ...c.companions.map((role) => person(role, PLAIN_TRAITS))];
+    return { household: { name: `Gezelschap ${c.name}`, kind: artist ? 'artiest' : 'vermogend', label: artist ? r.pick(LABELS) : r.pick(COMPANIES), project: artist ? r.pick(SONG_PROJECTS) : r.pick(WEALTHY_PROJECTS), fame: 2, tagline: c.tagline, celebrity: c.key }, guests };
   }
-  const used = new Set<string>();
-  const roles: Role[] = r.pick([['partner', 'partner'], ['partner', 'partner', 'kind'], ['partner', 'partner', 'kind', 'kind'], ['partner', 'opa', 'oma']] as Role[][]);
-  const guests = roles.map((role) => companion(role, used));
+  const x = r.next();
+  if (x < KIND_SHARE.artiest) {
+    // songwriting team: a lead artist plus one to three co-writers, a producer or a musician
+    const lead = r.pick(ARTISTS);
+    const label = r.pick(LABELS), project = r.pick(SONG_PROJECTS);
+    const co = r.pick([['songwriter'], ['producer'], ['songwriter', 'producer'], ['muzikant', 'songwriter'], ['songwriter', 'producer', 'muzikant']] as Role[][]);
+    const guests: Guest[] = [{ name: lead.name, role: lead.role, trait: r.pick(ARTIST_TRAITS), color: r.pick(CLOTHES) }, ...co.map((role) => person(role, ARTIST_TRAITS))];
+    used.add(lead.name);
+    return { household: { name: `Schrijverskamp ${lead.name}`, kind: 'artiest', label, project, fame: 1, tagline: `${lead.name} (${ROLE_NAMES[lead.role]}) schrijft hier aan ${project} voor ${label}` }, guests };
+  }
+  if (x < KIND_SHARE.artiest + KIND_SHARE.vermogend) {
+    const surname = r.pick(POSH), role = r.pick(WEALTHY_ROLES), company = r.pick(COMPANIES), project = r.pick(WEALTHY_PROJECTS);
+    const rest = r.pick([['partner'], ['partner', 'kind'], ['partner', 'kind', 'kind']] as Role[][]);
+    const guests: Guest[] = [person(role, WEALTHY_TRAITS), ...rest.map((ro) => person(ro, PLAIN_TRAITS))];
+    return { household: { name: `Familie ${surname}`, kind: 'vermogend', label: company, project, fame: 1, tagline: `${guests[0].name} ${surname} (${ROLE_NAMES[role]}, ${company}) is hier voor ${project}` }, guests };
+  }
+  const roles: Role[] = r.pick([['partner', 'partner'], ['partner', 'partner', 'kind'], ['partner', 'partner', 'kind', 'kind'], ['partner', 'opa', 'oma'], ['partner', 'partner', 'kind', 'opa']] as Role[][]);
+  const guests = roles.map((role) => person(role, PLAIN_TRAITS));
   const surname = r.pick(SURN_);
-  return { household: { name: `Familie ${surname}`, omroep, show, fame: 0, tagline: `Familie ${surname} is op vakantie (fan van tv en muziek)` }, guests };
+  return { household: { name: `Familie ${surname}`, kind: 'familie', label: '', project: '', fame: 0, tagline: `Familie ${surname} is een weekje op vakantie aan het water` }, guests };
 }
 
 // ---------------------------------------------------------------- storylines
-/** Text variables in story copy and story task texts: {lead} (lead guest name), {role}, {household}, {omroep}, {show}, {loc}. */
+/** Text variables in story copy and story task texts: {lead} (lead guest name), {role}, {household}, {label}, {project}, {n}, {loc}. */
 export interface StoryChapter {
   /** narration shown on the projector when the chapter starts */
   text: string;
-  /** story-only task template code; its location follows the template (house = the household's bungalow) */
+  /** story-only task template code; its location follows the template (house = the household's villa) */
   task: string;
   /** game minutes after the previous chapter was completed (first chapter: 0) */
   afterMin: number;
@@ -126,12 +142,12 @@ export interface StoryTemplate {
   code: string; title: string;
   /** the household needs a guest with one of these roles (the first match becomes {lead}) */
   roles: Role[];
+  /** only for these kinds of households */
+  kinds?: HouseholdKind[];
   minFame?: Fame;
   /** never for a real person (invented conflict or words put in someone's mouth) */
   noRealPeople?: boolean;
-  /** only for ordinary families (not for BN'ers) */
-  familiesOnly?: boolean;
-  /** only for these BN'ers (CELEBRITIES keys, '*' = any BN'er without a storyline of their own) */
+  /** only for these cameo guests (keys, '*' = any cameo guest without a storyline of their own) */
   celebrities?: string[];
   weight: number;
   intro: string;
@@ -139,238 +155,83 @@ export interface StoryTemplate {
   finale: string;
   /** told when a chapter task is not picked up in time or the household leaves */
   fail: string;
-  /** applied to the household's bungalow (and its satisfaction) */
+  /** applied to the household's villa (and its satisfaction) */
   onSuccess: Effect;
   onFail: Effect;
 }
+const ch = (text: string, task: string, afterMin: number): StoryChapter => ({ text, task, afterMin });
+const ART: HouseholdKind[] = ['artiest'], RICH: HouseholdKind[] = ['vermogend'], FAM: HouseholdKind[] = ['familie'];
 
 export const STORIES: StoryTemplate[] = [
-  { code: 'STORY_PAPARAZZI', title: 'Paparazzi in de rododendrons', roles: ['presentator', 'quizmaster', 'soapacteur', 'realityster', 'nieuwslezer', 'weerpresentator', 'talkshowgast', 'artiest', 'cabaretier', 'vlogger'], minFame: 2, weight: 1.2,
-    intro: '{lead} ({role}, {show}) wilde rustig op vakantie. Een roddelfotograaf denkt daar anders over.',
-    chapters: [
-      { text: 'Er zit iemand met een telelens in de struiken bij {loc}.', task: 'STY_PAPARAZZI_BUSH', afterMin: 0 },
-      { text: 'De fotograaf is weg, maar de gordijnen van {lead} blijven dicht. Tijd voor wat privacy.', task: 'STY_PAPARAZZI_SCREEN', afterMin: 20 },
-      { text: '{lead} durft weer naar buiten, maar liever niet naar het restaurant.', task: 'STY_PAPARAZZI_BREAKFAST', afterMin: 30 },
-    ],
-    finale: '{lead} ontbijt ongestoord op het terras. Geen enkele foto in de bladen.', fail: 'Er duiken wazige vakantiefoto\'s van {lead} op internet op. Jammer van de rust.',
-    onSuccess: { mood: 0.25 }, onFail: { mood: -0.2 } },
-  { code: 'STORY_LIVE_RADIO', title: 'Live vanuit de bungalow', roles: ['radio-dj'], weight: 1.2,
-    intro: '{lead} presenteert deze week de ochtendshow van {omroep} live vanuit bungalow {n}.',
-    chapters: [
-      { text: 'De zendapparatuur van {lead} laat steeds de stroom uitvallen in {loc}.', task: 'STY_RADIO_POWER', afterMin: 0 },
-      { text: 'De show is live. De buren vinden de jingles om zes uur \'s ochtends iets minder leuk.', task: 'STY_RADIO_NEIGHBOURS', afterMin: 25 },
-      { text: '{lead} heeft op de radio gezegd dat luisteraars langs mogen komen. Er staat een rij bij de receptie.', task: 'STY_RADIO_FANS', afterMin: 30 },
-    ],
-    finale: 'De laatste uitzending eindigt met een groet aan het hele park. Het park is landelijk op de radio geweest.', fail: '{lead} zegt live op de radio dat het park "nog wat moet oefenen".',
-    onSuccess: { mood: 0.2, tech: 0.1 }, onFail: { mood: -0.2 } },
-  { code: 'STORY_REALITY', title: 'Opnames van een realityshow', roles: ['realityster', 'producent', 'regisseur', 'cameraman'], weight: 1.1,
-    intro: 'De makers van {show} willen een aflevering opnemen in en rond bungalow {n}.',
-    chapters: [
-      { text: 'De crew van {show} staat met camera\'s bij de receptie, maar heeft nog geen draaitoestemming.', task: 'STY_REALITY_PERMIT', afterMin: 0 },
-      { text: 'Er is gefilmd. {loc} ligt vol confetti, nepbloemen en een kapotte tuinstoel.', task: 'STY_REALITY_CLEANUP', afterMin: 25 },
-      { text: 'Voor de slotscène wil de regie een "spontaan" kampvuurfeest. Met vergunning, en veilig graag.', task: 'STY_REALITY_FINALE', afterMin: 30 },
-    ],
-    finale: 'De aflevering is in de pocket. Het park staat straks in de aftiteling.', fail: 'De crew vertrekt boos. In de aflevering heet het park nu "Camping Chaos".',
-    onSuccess: { mood: 0.2, clean: 0.1 }, onFail: { mood: -0.15, clean: -0.1 } },
-  { code: 'STORY_QUIZ_VOICE', title: 'De quizmaster is de stem kwijt', roles: ['quizmaster'], weight: 1,
-    intro: '{lead} presenteert morgen een live-aflevering van {show}, maar klinkt als een krakende deur.',
-    chapters: [
-      { text: '{lead} fluistert dat er honingthee nodig is. Veel honingthee.', task: 'STY_QUIZ_TEA', afterMin: 0 },
-      { text: 'De stem komt terug. Nu wil {lead} oefenen met een echt publiek.', task: 'STY_QUIZ_REHEARSAL', afterMin: 25 },
-      { text: 'De oefenquiz was een succes. {lead} wil de vragenkaartjes laten printen, maar de printer bij de receptie weigert.', task: 'STY_QUIZ_PRINT', afterMin: 20 },
-    ],
-    finale: '{lead} klinkt weer als vanouds. Het park krijgt een bedankje in de uitzending.', fail: '{lead} moet de uitzending afzeggen en geeft "de boslucht" de schuld.',
-    onSuccess: { mood: 0.2 }, onFail: { mood: -0.15 } },
-  { code: 'STORY_WEATHER', title: 'Het weerbericht zat ernaast', roles: ['weerpresentator'], weight: 1,
-    intro: '{lead} voorspelde op tv een stralende week. Het park weet inmiddels wie dat was.',
-    chapters: [
-      { text: 'Het regent pijpenstelen. Gasten wijzen naar bungalow {n} en mopperen bij de receptie.', task: 'STY_WEATHER_COMPLAINTS', afterMin: 0 },
-      { text: 'Het water loopt niet weg op het pad bij {loc}.', task: 'STY_WEATHER_PUDDLE', afterMin: 20 },
-      { text: '{lead} wil het goedmaken met een binnenactiviteit voor alle natte kinderen.', task: 'STY_WEATHER_INDOOR', afterMin: 25 },
-    ],
-    finale: 'De zon breekt door, precies zoals {lead} "eigenlijk al bedoelde". Applaus bij de bowling.', fail: '{lead} vertrekt verbitterd en voorspelt het park voorlopig alleen nog onweer.',
-    onSuccess: { mood: 0.2 }, onFail: { mood: -0.15 } },
-  { code: 'STORY_SCOOP', title: 'Een scoop in het bos', roles: ['nieuwslezer', 'columnist'], weight: 0.9,
-    intro: '{lead} van {omroep} is ervan overtuigd dat er in het park "iets groots" speelt.',
-    chapters: [
-      { text: '{lead} wil een rustige werkplek voor een live-verbinding. Het wifi in {loc} haalt 2 kbit/s.', task: 'STY_SCOOP_WIFI', afterMin: 0 },
-      { text: 'De scoop blijkt een reiger die elke dag dezelfde vis steelt. {lead} wil hem toch filmen.', task: 'STY_SCOOP_HERON', afterMin: 25 },
-      { text: 'Het item is af. {lead} wil een kleine kijkavond houden in de horeca.', task: 'STY_SCOOP_VIEWING', afterMin: 25 },
-    ],
-    finale: '"De reiger van het park" wordt het best bekeken item van de week.', fail: 'Er komt geen item. {lead} schrijft een column over "het slechtste wifi van Nederland".',
-    onSuccess: { mood: 0.2, tech: 0.1 }, onFail: { mood: -0.15 } },
-  { code: 'STORY_TALKSHOW_FEUD', title: 'Ruzie tussen talkshowgasten', roles: ['talkshowgast', 'columnist', 'omroepdirecteur'], noRealPeople: true, weight: 0.9,
-    intro: '{lead} ontdekt dat de buren een tafelgenoot uit {show} zijn, met wie het al jaren niet botert.',
-    chapters: [
-      { text: 'Over de heg bij {loc} wordt luidkeels gedebatteerd. Gasten pakken popcorn.', task: 'STY_FEUD_MEDIATE', afterMin: 0 },
-      { text: 'Er is een wapenstilstand. Een verzoeningsdiner moet het bezegelen.', task: 'STY_FEUD_DINNER', afterMin: 30 },
-    ],
-    finale: 'Na het dessert besluiten ze samen een podcast te beginnen. Over vakantieparken.', fail: 'De ruzie gaat verder in de talkshow. Het park wordt drie keer genoemd, en niet positief.',
-    onSuccess: { mood: 0.25 }, onFail: { mood: -0.2 } },
-  { code: 'STORY_INFLUENCER', title: 'De perfecte content', roles: ['vlogger', 'realityster'], weight: 1.1,
-    intro: '{lead} heeft een deal met {omroep}: elke dag een video uit het park.',
-    chapters: [
-      { text: '{lead} wil om acht uur filmen in een leeg zwembad. "Voor de esthetiek."', task: 'STY_INFLU_POOL', afterMin: 0 },
-      { text: 'Volgende video: een bakfiets met ringlamp en een drone erachteraan.', task: 'STY_INFLU_BAKFIETS', afterMin: 25 },
-      { text: 'De unboxing-video is opgenomen. {loc} ligt vol verpakkingsmateriaal en glitter.', task: 'STY_INFLU_GLITTER', afterMin: 25 },
-    ],
-    finale: 'De video gaat viraal. "Beste bungalow ooit," zegt {lead} tegen 300.000 volgers.', fail: '{lead} plaatst een video met de titel "Ik ben zo teleurgesteld".',
-    onSuccess: { mood: 0.25 }, onFail: { mood: -0.2 } },
-  { code: 'STORY_SOAP_SCRIPT', title: 'Het gelekte script', roles: ['soapacteur', 'regisseur', 'producent'], weight: 0.9,
-    intro: '{lead} neemt het geheime script van het seizoensslot van {show} mee op vakantie. Wat kan er misgaan?',
-    chapters: [
-      { text: 'Het script is weg. {lead} denkt dat het bij de receptie is blijven liggen.', task: 'STY_SOAP_SEARCH', afterMin: 0 },
-      { text: 'Gevonden, maar een paar bladzijden zijn nat geworden in {loc}. Ze moeten snel drogen.', task: 'STY_SOAP_DRY', afterMin: 20 },
-      { text: 'Bij het restaurant fluisteren gasten het einde al na. Tijd voor een afleidingsmanoeuvre.', task: 'STY_SOAP_DECOY', afterMin: 20 },
-    ],
-    finale: 'Het geheim is veilig. Niemand weet dat de tweelingbroer terugkomt.', fail: 'Het einde van {show} staat op internet. De regisseur belt {lead} elk kwartier.',
-    onSuccess: { mood: 0.2 }, onFail: { mood: -0.15 } },
-  { code: 'STORY_JINGLE', title: 'Het geluid van het bos', roles: ['jingleproducent', 'geluidstechnicus', 'radio-dj', 'artiest'], weight: 0.8,
-    intro: '{lead} wil een nieuwe jingle voor {omroep} maken met alleen geluiden uit het park.',
-    chapters: [
-      { text: '{lead} neemt vogelgeluid op bij {loc}, maar een bladblazer verpest elke opname.', task: 'STY_JINGLE_SILENCE', afterMin: 0 },
-      { text: 'Voor het refrein is een koor nodig. "Twintig gasten, allemaal vals, dat is de charme."', task: 'STY_JINGLE_CHOIR', afterMin: 25 },
-    ],
-    finale: 'De jingle is klaar en klinkt vanaf morgen elk uur op de radio. Je hoort er een eend in.', fail: 'De jingle wordt "De Bladblazer". {lead} is er niet blij mee.',
-    onSuccess: { mood: 0.2 }, onFail: { mood: -0.12 } },
-  { code: 'STORY_DIRECTOR_TEAMDAY', title: 'Teamdag van de omroep', roles: ['omroepdirecteur', 'producent'], weight: 0.8,
-    intro: '{lead} heeft de hele redactie van {omroep} uitgenodigd voor een teamdag in het park.',
-    chapters: [
-      { text: 'Er komen 24 redacteuren aan. {lead} wil tandems voor iedereen.', task: 'STY_TEAMDAY_BIKES', afterMin: 0 },
-      { text: 'Na de fietstocht wil het team een lunch, liefst glutenvrij, vegan en "met een twist".', task: 'STY_TEAMDAY_LUNCH', afterMin: 30 },
-      { text: 'Afsluiter: een teambuildingspel. {lead} wil iets "met vertrouwen en zonder valpartijen".', task: 'STY_TEAMDAY_GAME', afterMin: 30 },
-    ],
-    finale: 'De redactie gaat moe en tevreden naar huis. {omroep} boekt volgend jaar opnieuw.', fail: 'De redactie maakt een satirisch item over de teamdag. Raad eens waar die was.',
-    onSuccess: { mood: 0.25 }, onFail: { mood: -0.15 } },
-  { code: 'STORY_INTERN_CAMERA', title: 'De stagiair en de dure camera', roles: ['stagiair', 'cameraman'], weight: 0.9,
-    intro: 'De stagiair van {show} heeft de camera van 40.000 euro "even ergens neergelegd".',
-    chapters: [
-      { text: 'De camera is niet in {loc}. Misschien bij de gevonden voorwerpen?', task: 'STY_INTERN_LOSTFOUND', afterMin: 0 },
-      { text: 'Iemand zag een camera in een fietsmandje van de verhuur.', task: 'STY_INTERN_BIKE', afterMin: 15 },
-    ],
-    finale: 'De camera is terug, zonder kras. De stagiair krijgt een vaste aanstelling (bij de koffie).', fail: 'De camera blijft weg. De stagiair overweegt een carrière buiten de media.',
-    onSuccess: { mood: 0.2 }, onFail: { mood: -0.1 } },
-];
-STORIES.push(
-  { code: 'STORY_GIG', title: 'Spontaan optreden', roles: ['artiest'], weight: 1.4,
-    intro: '{lead} is op vakantie in bungalow {n}, maar het park hoopt stiekem op een liedje.',
-    chapters: [
-      { text: '{lead} wil best een paar nummers spelen op het terras. Er is een klein podium nodig.', task: 'STY_GIG_STAGE', afterMin: 0 },
-      { text: 'Het podium staat. Nu nog geluid dat niet piept of kraakt.', task: 'STY_GIG_SOUND', afterMin: 20 },
-      { text: 'Het halve park komt eraan. Regel een nette rij en drinken voor iedereen.', task: 'STY_GIG_CROWD', afterMin: 20 },
-    ],
-    finale: 'Het hele terras zingt mee met {lead}. Een avond om nooit te vergeten.', fail: 'Het optreden gaat niet door. {lead} speelt alleen een liedje voor de eenden.',
-    onSuccess: { mood: 0.3 }, onFail: { mood: -0.1 } },
-  { code: 'STORY_TRYOUT', title: 'Try-out in De Tent', roles: ['cabaretier'], weight: 1.4,
-    intro: '{lead} wil in het park in alle rust nieuw materiaal uitproberen.',
-    chapters: [
-      { text: 'Voor de try-out van {lead} zijn stoelen en een spotje nodig in De Tent.', task: 'STY_TRYOUT_SETUP', afterMin: 0 },
-      { text: 'Iedereen wil erbij zijn. Deel bij de receptie gratis kaartjes uit.', task: 'STY_TRYOUT_TICKETS', afterMin: 20 },
-      { text: 'Na de voorstelling wil {lead} graag napraten met het publiek bij een hapje.', task: 'STY_TRYOUT_AFTER', afterMin: 30 },
-    ],
-    finale: 'De zaal lag dubbel. {lead} bedankt het park voor het beste try-outpubliek ooit.', fail: 'De try-out wordt afgeblazen. {lead} oefent de grappen dan maar op de buren.',
-    onSuccess: { mood: 0.3 }, onFail: { mood: -0.1 } },
-  { code: 'STORY_CELEB_JOHN', title: 'Talentenjacht in het park', roles: ['producent'], celebrities: ['john-de-mol'], weight: 3,
-    intro: '{lead} is op vakantie in bungalow {n}. Het hele park heeft het er al over.',
-    chapters: [
-      { text: 'Gasten hopen op een handtekening van {lead}. Er staat een rij bij de receptie.', task: 'STY_CELEB_AUTOGRAPH', afterMin: 0 },
-      { text: 'Bij de karaoke-avond durven ineens heel veel gasten het podium op. Je weet maar nooit wie er kijkt.', task: 'STY_CELEB_TALENT', afterMin: 30 },
-    ],
-    finale: 'Een gezellige avond met veel applaus. {lead} geniet zichtbaar van de rust en de bitterballen.', fail: 'De rij werd te lang en {lead} hield de gordijnen maar dicht. Jammer voor de fans.',
-    onSuccess: { mood: 0.25 }, onFail: { mood: -0.1 } },
-  { code: 'STORY_CELEB_ANDRE', title: 'Een bekende gast in het restaurant', roles: ['presentator'], celebrities: ['andre-van-duin'], weight: 3,
-    intro: '{lead} logeert in bungalow {n}. Kinderen herkennen de stem al van ver.',
-    chapters: [
-      { text: 'Gasten hopen op een handtekening van {lead}. Er staat een rij bij de receptie.', task: 'STY_CELEB_AUTOGRAPH', afterMin: 0 },
-      { text: '{lead} wil rustig eten, maar het restaurant zit vol nieuwsgierige gasten. Regel een rustig plekje.', task: 'STY_CELEB_QUIET_TABLE', afterMin: 30 },
-    ],
-    finale: '{lead} bedankt het personeel en zwaait bij vertrek naar de hele receptie.', fail: 'Het werd te druk en {lead} at uiteindelijk een boterham in de bungalow.',
-    onSuccess: { mood: 0.25 }, onFail: { mood: -0.1 } },
-  { code: 'STORY_CELEB_GUEST', title: 'Een bekende gast', roles: [...MEDIA_ROLES], celebrities: ['*'], weight: 1,
-    intro: '{lead} logeert in bungalow {n} en wordt overal herkend.',
-    chapters: [
-      { text: 'Gasten hopen op een handtekening van {lead}. Er staat een rij bij de receptie.', task: 'STY_CELEB_AUTOGRAPH', afterMin: 0 },
-      { text: '{lead} wil rustig eten, maar het restaurant zit vol nieuwsgierige gasten. Regel een rustig plekje.', task: 'STY_CELEB_QUIET_TABLE', afterMin: 30 },
-    ],
-    finale: '{lead} bedankt het personeel voor een heerlijk rustige vakantie.', fail: 'Het werd te druk en {lead} bleef de rest van de week binnen.',
-    onSuccess: { mood: 0.25 }, onFail: { mood: -0.1 } },
-);
-
-const ch = (text: string, task: string, afterMin: number): StoryChapter => ({ text, task, afterMin });
-STORIES.push(
-  { code: 'STORY_RECORDING', title: 'Opnames voor een nieuw programma', roles: ['presentator', 'quizmaster'], weight: 1.2,
-    intro: '{lead} wil in het park een proefaflevering van een nieuw programma opnemen.',
-    chapters: [ch('Eerst afspraken maken bij de receptie: waar mag er gefilmd worden?', 'STY_REC_PERMIT', 0), ch('De Tent wordt studio. Er is extra licht en stroom nodig.', 'STY_REC_LIGHT', 20), ch('Nu nog publiek: wie wil er in de zaal zitten?', 'STY_REC_AUDIENCE', 25)],
-    finale: 'De proefaflevering is opgenomen. {lead} bedankt het publiek met een buiging.', fail: 'De opnames worden verplaatst naar de studio. Jammer, het park had zo mooi in beeld gestaan.', onSuccess: { mood: 0.25 }, onFail: { mood: -0.1 } },
-  { code: 'STORY_BIRTHDAY_RADIO', title: 'Verjaardag op de radio', roles: ['radio-dj'], weight: 1.1,
-    intro: '{lead} wil live op de radio een jarige gast in het park verrassen.',
-    chapters: [ch('Er moet een taart komen, met kaarsjes en een naam erop.', 'STY_BDAY_CAKE', 0), ch('De bungalow van de jarige moet versierd worden zonder dat die het merkt.', 'STY_BDAY_DECOR', 20), ch('Lok de jarige naar de receptie terwijl {lead} live gaat.', 'STY_BDAY_SECRET', 20)],
-    finale: 'Live op de radio: een verraste jarige, een taart en het hele park zingt mee.', fail: 'De verrassing is uitgelekt. {lead} houdt het bij een felicitatie via de telefoon.', onSuccess: { mood: 0.3 }, onFail: { mood: -0.1 } },
-  { code: 'STORY_WEATHER_JETTY', title: 'Het weerbericht vanaf de steiger', roles: ['weerpresentator'], weight: 1.1,
-    intro: '{lead} wil het weerbericht deze week presenteren vanuit het park.',
-    chapters: [ch('Er moet een mooie plek bij {loc} worden gevonden, met uitzicht op het water.', 'STY_WLIVE_SPOT', 0), ch('Voor de camera is stroom nodig, buiten, en veilig.', 'STY_WLIVE_POWER', 20), ch('Het gaat (natuurlijk) regenen tijdens de uitzending. Paraplu\'s!', 'STY_WLIVE_UMBRELLA', 20)],
-    finale: 'Het weerbericht vanuit het park is een succes. Zon op de achtergrond, een eend in beeld.', fail: 'Het weerbericht komt toch weer uit de studio. Het park blijft net buiten beeld.', onSuccess: { mood: 0.25 }, onFail: { mood: -0.1 } },
-  { code: 'STORY_NEWS_DESK', title: 'Noodstudio in de bungalow', roles: ['nieuwslezer'], weight: 1,
-    intro: '{lead} moet onverwacht een nieuwsuitzending inspreken vanuit bungalow {n}.',
-    chapters: [ch('De woonkamer van {loc} moet een nette studio worden: opruimen en een rustige achtergrond.', 'STY_DESK_TABLE', 0), ch('Stilte graag! De buren moeten even weten dat er opgenomen wordt.', 'STY_DESK_QUIET', 15), ch('Na de uitzending: sterke koffie voor {lead}.', 'STY_DESK_COFFEE', 20)],
-    finale: 'De uitzending is vlekkeloos. Niemand zag dat er een badeend naast de laptop stond.', fail: 'Tijdens de uitzending blaft een hond. Een klein moment van landelijke bekendheid.', onSuccess: { mood: 0.2 }, onFail: { mood: -0.1 } },
-  { code: 'STORY_VLOG_CHALLENGE', title: 'De parkchallenge', roles: ['vlogger'], weight: 1.2,
-    intro: '{lead} bedenkt een challenge: binnen een uur alle voorzieningen van het park bezoeken.',
-    chapters: [ch('Er zijn snelle fietsen nodig voor de challenge.', 'STY_VLOG_ROUTE', 0), ch('Fans hebben het gezien en komen massaal naar de receptie.', 'STY_VLOG_FANS', 20), ch('Eindpunt: de snackbar, met een frietje voor iedereen die meedeed.', 'STY_VLOG_SNACK', 20)],
-    finale: 'De video van de parkchallenge wordt een hit. Het park staat nu bij duizenden op het verlanglijstje.', fail: 'De challenge strandt halverwege. {lead} maakt er toch nog een grappige video van.', onSuccess: { mood: 0.3 }, onFail: { mood: -0.1 } },
-  { code: 'STORY_VIDEOCLIP', title: 'Videoclip in het bos', roles: ['artiest'], weight: 1.2,
-    intro: '{lead} wil een deel van een nieuwe videoclip opnemen in het park.',
-    chapters: [ch('Er is een mooie plek in het bos nodig bij {loc}, zonder auto\'s in beeld.', 'STY_CLIP_LOCATION', 0), ch('De regisseur zoekt figuranten die willen dansen.', 'STY_CLIP_EXTRAS', 20), ch('Na een lange opnamedag heeft de crew honger.', 'STY_CLIP_CATERING', 25)],
-    finale: 'De clip is klaar. Wie goed kijkt, ziet het park voorbij komen in de tweede minuut.', fail: 'De opnames worden afgebroken. De clip wordt toch in de studio gemaakt.', onSuccess: { mood: 0.3 }, onFail: { mood: -0.1 } },
-  { code: 'STORY_SINGALONG', title: 'Meezingen bij het kampvuur', roles: ['artiest'], weight: 1.2,
-    intro: '{lead} pakt \'s avonds de gitaar en wil met gasten meezingen bij het kampvuur.',
-    chapters: [ch('Er is een vuurkorf nodig op een veilige plek, met een emmer zand ernaast.', 'STY_SING_FIRE', 0), ch('Het wordt fris. Dekens voor iedereen!', 'STY_SING_BLANKETS', 20), ch('Geen kampvuur zonder marshmallows.', 'STY_SING_MARSHMALLOW', 15)],
-    finale: 'Tot laat in de avond klinken de liedjes van {lead} over het park.', fail: 'Het kampvuur gaat niet door. {lead} zingt dan maar op het terras van de bungalow.', onSuccess: { mood: 0.3 }, onFail: { mood: -0.1 } },
-  { code: 'STORY_KIDS_SHOW', title: 'Kindervoorstelling', roles: ['artiest', 'presentator', 'cabaretier'], weight: 1,
-    intro: '{lead} wil voor de kinderen in het park een speciale voorstelling geven.',
-    chapters: [ch('Het podium in het speelparadijs moet klaar.', 'STY_KIDS_STAGE', 0), ch('De kinderen willen geschminkt worden voor de voorstelling.', 'STY_KIDS_FACEPAINT', 15), ch('Na afloop: limonade en koekjes voor alle kinderen.', 'STY_KIDS_LEMONADE', 25)],
-    finale: 'Een zaal vol kinderen die meezingen en meedansen. {lead} krijgt tekeningen als dank.', fail: 'De voorstelling wordt kort gehouden. De kinderen hadden graag meer gezien.', onSuccess: { mood: 0.3 }, onFail: { mood: -0.1 } },
-  { code: 'STORY_CABARET_WALK', title: 'Inspiratiewandeling', roles: ['cabaretier'], weight: 1,
-    intro: '{lead} zoekt in het park inspiratie voor nieuwe grappen.',
-    chapters: [ch('{lead} wil een wandelkaart met de rustigste paden.', 'STY_WALK_MAP', 0), ch('Op het pad bij {loc} ligt een omgevallen boomstam. Opruimen!', 'STY_WALK_PATH', 20)],
-    finale: '{lead} heeft drie nieuwe grappen. Eén ervan gaat over een eend.', fail: 'De wandeling valt in het water. Ook dat levert misschien een grap op.', onSuccess: { mood: 0.2 }, onFail: { mood: -0.05 } },
-  { code: 'STORY_PUBQUIZ', title: 'Pubquiz in de Brasserie', roles: ['quizmaster', 'presentator', 'radio-dj'], weight: 1.2,
-    intro: '{lead} biedt aan om vanavond een pubquiz te presenteren.',
-    chapters: [ch('De Brasserie moet worden ingericht met teamtafels.', 'STY_QUIZ_TABLES', 0), ch('Er is een microfoon en een scherm nodig.', 'STY_QUIZ_SOUND', 20), ch('Wat is een quiz zonder prijzen? Haal ze bij de ParkShop.', 'STY_QUIZ_PRIZES', 20)],
-    finale: 'Team "De Bungalowbazen" wint. {lead} reikt de prijzen uit onder luid applaus.', fail: 'De quiz loopt uit op een gezellige maar chaotische avond zonder winnaar.', onSuccess: { mood: 0.3 }, onFail: { mood: -0.1 } },
-  { code: 'STORY_FORMAT_SCOUT', title: 'Op zoek naar een nieuw format', roles: ['producent'], weight: 1,
-    intro: '{lead} kijkt rond of het park een mooi decor is voor een nieuw tv-format.',
-    chapters: [ch('{lead} wil een rondleiding langs alle voorzieningen.', 'STY_SCOUT_TOUR', 0), ch('Na de rondleiding: een ruimte om het idee te bespreken, met koffie.', 'STY_SCOUT_PITCH', 25)],
-    finale: '{lead} is enthousiast: "Hier zit een programma in." Het park houdt de adem in.', fail: '{lead} vertrekt vriendelijk maar zonder plannen. Misschien een volgende keer.', onSuccess: { mood: 0.25 }, onFail: { mood: -0.05 } },
-  { code: 'STORY_FANCLUB', title: 'De fanclub komt op bezoek', roles: ['artiest'], weight: 1.1,
-    intro: 'De fanclub van {lead} heeft gehoord dat hun idool in het park is.',
-    chapters: [ch('Een bus vol fans meldt zich. Wijs ze een plek op de parkeerplaats.', 'STY_FAN_BUS', 0), ch('{lead} wil best op de foto. Regel een fotomoment bij de receptie.', 'STY_FAN_PHOTOS', 15), ch('Geef de fans iets te drinken voor de terugreis.', 'STY_FAN_DRINKS', 20)],
-    finale: 'Blije fans, een volle telefoon met foto\'s en een tevreden {lead}.', fail: 'Het wordt te druk. De fanclub vertrekt zonder foto, maar met een mooi verhaal.', onSuccess: { mood: 0.3 }, onFail: { mood: -0.1 } },
-  { code: 'STORY_RADIO_PRIZE', title: 'Prijsvraag op de radio', roles: ['radio-dj'], weight: 1.1,
-    intro: '{lead} verstopt een gouden microfoon in het park. Luisteraars mogen hem zoeken.',
-    chapters: [ch('De gouden microfoon moet ergens bij {loc} verstopt worden, zonder dat iemand het ziet.', 'STY_PRIZE_HIDE', 0), ch('Gasten komen om hints vragen bij de receptie.', 'STY_PRIZE_HINTS', 20), ch('Er is een winnaar! Een prijsuitreiking met muziek.', 'STY_PRIZE_WINNER', 25)],
-    finale: 'De winnaar mag een plaat aanvragen bij {lead}. Het hele park luistert mee.', fail: 'Niemand vindt de microfoon. {lead} haalt hem zelf weer op, met een knipoog.', onSuccess: { mood: 0.3 }, onFail: { mood: -0.1 } },
-  { code: 'STORY_COOKING', title: 'Kookwedstrijd met de chef', roles: ['presentator', 'artiest'], weight: 1,
-    intro: '{lead} daagt de chef van De Brasserie uit voor een kookwedstrijd.',
-    chapters: [ch('De keuken moet voor twee koks worden ingericht.', 'STY_COOK_KITCHEN', 0), ch('Een jury van gasten proeft en beoordeelt.', 'STY_COOK_JURY', 25)],
-    finale: 'Het wordt gelijkspel. Iedereen mag van beide gerechten proeven.', fail: 'De wedstrijd wordt uitgesteld. De chef houdt de pannen alvast warm.', onSuccess: { mood: 0.25 }, onFail: { mood: -0.05 } },
-  { code: 'STORY_PROPOSAL', title: 'Huwelijksaanzoek bij de vijver', roles: ['partner'], familiesOnly: true, weight: 1,
-    intro: '{lead} uit {household} wil vanavond een aanzoek doen bij de vijver.',
-    chapters: [ch('Er zijn bloemen nodig, discreet geregeld via de ParkShop.', 'STY_PROP_FLOWERS', 0), ch('De mooiste plek bij het water moet stiekem worden versierd.', 'STY_PROP_SPOT', 20), ch('Ze heeft ja gezegd! Champagne naar de vijver.', 'STY_PROP_BUBBLES', 20)],
-    finale: 'Ja! Het hele terras klapt als het stel terugkomt.', fail: 'Het aanzoek wordt uitgesteld tot morgen. De ring blijft nog even in de jaszak.', onSuccess: { mood: 0.35 }, onFail: { mood: -0.1 } },
-  { code: 'STORY_GRANDMA_80', title: 'Oma wordt 80', roles: ['oma', 'opa'], familiesOnly: true, weight: 1,
+  // ---------------------------------------------------------------- songwriting camp
+  { code: 'STORY_WRITING_CAMP', title: 'Schrijverskamp in de villa', roles: ARTIST_ROLES, kinds: ART, weight: 1.4,
+    intro: '{lead} schrijft deze week in villa {n} aan {project} voor {label}.',
+    chapters: [ch('Er wordt geschreven in {loc}, maar de buren blazen blad. Stilte graag.', 'STY_CAMP_QUIET', 0), ch('De vleugel in {loc} is vals geworden. Er moet een pianostemmer komen.', 'STY_CAMP_PIANO', 25), ch('Het nummer is af. {lead} wil het laten horen in de brasserie.', 'STY_CAMP_DEMO_NIGHT', 30)],
+    finale: 'De brasserie is stil, dan klinkt een applaus tot op de golfbaan. {label} wil het nummer meteen uitbrengen.', fail: 'Het schrijverskamp loopt vast. {lead} neemt de halve melodie mee naar huis.', onSuccess: { mood: 0.3 }, onFail: { mood: -0.15 } },
+  { code: 'STORY_HOME_STUDIO', title: 'Thuisstudio aan de gracht', roles: ['producer', 'muzikant', 'zanger'], kinds: ART, weight: 1.2,
+    intro: '{lead} bouwt in villa {n} een studio om {project} op te nemen.',
+    chapters: [ch('De studioapparatuur laat de stroom uitvallen in {loc}.', 'STY_STUDIO_POWER', 0), ch('De glaspui galmt. {lead} wil dekens en matrassen voor de akoestiek.', 'STY_STUDIO_DAMPING', 20), ch('Alles is opgenomen. Nu nog uploaden naar {label}.', 'STY_STUDIO_UPLOAD', 25)],
+    finale: 'De opnames staan bij {label}. In de liner notes staat: "opgenomen aan een gracht in Harderwold".', fail: 'De opnames komen te laat bij {label}. {lead} moet in de stad opnieuw beginnen.', onSuccess: { mood: 0.25, tech: 0.1 }, onFail: { mood: -0.15 } },
+  { code: 'STORY_JETTY_SUNRISE', title: 'Inspiratie op de steiger', roles: ['songwriter', 'zanger'], kinds: ART, weight: 1.1,
+    intro: '{lead} schrijft de mooiste regels bij zonsopgang, op het water.',
+    chapters: [ch('{lead} wil om zes uur schrijven op de steiger van {loc}.', 'STY_JETTY_SUNRISE', 0), ch('Een plank op de steiger zit los. De gitaar viel er bijna door.', 'STY_JETTY_BOARD', 20), ch('Voor het refrein wil {lead} een rondje varen.', 'STY_JETTY_SLOEP', 25)],
+    finale: 'Het refrein gaat over een sloep bij zonsopgang. Het wordt het mooiste nummer van {project}.', fail: 'De inspiratie is weg. {lead} schrijft een nummer over een losse plank.', onSuccess: { mood: 0.25 }, onFail: { mood: -0.1 } },
+  { code: 'STORY_DEADLINE', title: 'Deadline voor de hit', roles: ARTIST_ROLES, kinds: ART, weight: 1.1,
+    intro: '{label} wil morgen het refrein van {project}. {lead} heeft nog geen woord.',
+    chapters: [ch('Er moet koffie komen in {loc}. Veel koffie.', 'STY_DEADLINE_COFFEE', 0), ch('{lead} wil de teksten op papier om te schrappen, maar de printer staakt.', 'STY_DEADLINE_PRINT', 20), ch('Om twee uur \'s nachts klinkt hetzelfde akkoord voor de veertigste keer. De buren zijn wakker.', 'STY_DEADLINE_NEIGHBOURS', 25)],
+    finale: 'Om vier uur is het af. {label} stuurt een berichtje met drie vlammetjes.', fail: 'De deadline is gemist. {label} geeft {lead} nog een week, met een zucht.', onSuccess: { mood: 0.25 }, onFail: { mood: -0.15 } },
+  { code: 'STORY_LISTENING_SESSION', title: 'Luistersessie bij de Residentie', roles: ['zanger', 'muzikant'], kinds: ART, weight: 1.2,
+    intro: '{lead} wil de nieuwe nummers voor het eerst live spelen, voor de gasten van het park.',
+    chapters: [ch('Er moet een klein podium komen in het gras bij de Residentie.', 'STY_LISTEN_STAGE', 0), ch('Het podium staat. Nu nog geluid dat niet piept.', 'STY_LISTEN_SOUND', 20), ch('Half het park komt eraan. Regel een nette rij en drinken.', 'STY_LISTEN_CROWD', 20)],
+    finale: 'Het hele grasveld zingt mee met {lead}. Een avond om nooit te vergeten.', fail: 'De luistersessie gaat niet door. {lead} speelt alleen voor de eenden bij de steiger.', onSuccess: { mood: 0.3 }, onFail: { mood: -0.1 } },
+  { code: 'STORY_LOST_LYRICS', title: 'Het verloren notitieboek', roles: ARTIST_ROLES, kinds: ART, weight: 1,
+    intro: 'Het notitieboek van {lead} met alle teksten voor {project} is weg.',
+    chapters: [ch('Misschien is het ingeleverd bij de gevonden voorwerpen.', 'STY_LYRICS_LOSTFOUND', 0), ch('Een golfer zag een zwart boekje bij de driving range.', 'STY_LYRICS_RANGE', 15)],
+    finale: 'Het boekje is terug, met een golfbalafdruk op de kaft. {lead} noemt het een geluksteken.', fail: 'Het boekje blijft weg. {lead} moet alles uit het hoofd opnieuw schrijven.', onSuccess: { mood: 0.25 }, onFail: { mood: -0.15 } },
+  // ---------------------------------------------------------------- well-to-do guests
+  { code: 'STORY_PRIVATE_CHEF', title: 'Privekok in de villa', roles: WEALTHY_ROLES, kinds: RICH, weight: 1.2,
+    intro: '{household} heeft een privekok laten komen voor een diner in villa {n}.',
+    chapters: [ch('De kok mist truffel, kreeft en verse dragon.', 'STY_CHEF_GROCERIES', 0), ch('Net nu het begint, doet de stoomoven het niet.', 'STY_CHEF_OVEN', 20), ch('Er komen meer gasten dan gedacht. Extra glazen en borden!', 'STY_CHEF_GLASSES', 20)],
+    finale: 'Een diner van vijf gangen op het terras aan de gracht. {lead} geeft de keukenploeg een dikke fooi.', fail: 'Het diner wordt een pizza-avond. Ook lekker, maar niet wat {lead} in gedachten had.', onSuccess: { mood: 0.3 }, onFail: { mood: -0.15 } },
+  { code: 'STORY_OWN_BOAT', title: 'De eigen boot voor de deur', roles: WEALTHY_ROLES, kinds: RICH, weight: 1.1,
+    intro: '{lead} komt met een eigen sloep van zeven meter, via het water.',
+    chapters: [ch('De boot moet aanleggen aan de steiger van {loc}.', 'STY_YACHT_MOOR', 0), ch('De boot wil walstroom. Veilig graag.', 'STY_YACHT_POWER', 20), ch('{lead} wil met gasten een vaartocht maken met een picknickmand.', 'STY_YACHT_PICNIC', 25)],
+    finale: 'De boot vaart door de grachten met een picknick aan boord. Alle buren zwaaien.', fail: 'De boot past niet bij de steiger. {lead} legt aan bij de buren, die zijn er niet blij mee.', onSuccess: { mood: 0.25 }, onFail: { mood: -0.15 } },
+  { code: 'STORY_GOLF_DEAL', title: 'Zakendeal op de golfbaan', roles: ['ondernemer', 'investeerder', 'directeur'], kinds: RICH, weight: 1.2,
+    intro: '{lead} van {label} wil de deal van het jaar rond maken op hole 9.',
+    chapters: [ch('Er zijn twee schone golfkarren nodig voor de flight.', 'STY_DEAL_CART', 0), ch('De green van hole 9 moet er perfect bij liggen.', 'STY_DEAL_GREEN', 20), ch('Na de ronde: een rustige tafel op het terras.', 'STY_DEAL_LUNCH', 25)],
+    finale: 'Een putt van vier meter, een handdruk en een glas bubbels. De deal is rond.', fail: 'De deal gaat niet door. "Volgende keer op een andere baan," zegt de zakenpartner.', onSuccess: { mood: 0.3 }, onFail: { mood: -0.15 } },
+  { code: 'STORY_POOL_PARTY', title: 'Poolparty aan de gracht', roles: ['partner', 'ondernemer', 'investeerder'], kinds: RICH, weight: 1.1,
+    intro: '{household} geeft vanavond een poolparty in villa {n}.',
+    chapters: [ch('Het privezwembad moet minstens 28 graden zijn.', 'STY_POOLPARTY_HEAT', 0), ch('De buren vinden het gezellig, tot elf uur.', 'STY_POOLPARTY_NEIGHBOURS', 30), ch('Het feest is voorbij. Het zwembad ligt vol slingers.', 'STY_POOLPARTY_CLEANUP', 30)],
+    finale: 'Een warm zwembad, lichtjes op de steiger en tevreden buren. Een geslaagd feest.', fail: 'Het water bleef koud en de buren klaagden. De party verhuist naar binnen.', onSuccess: { mood: 0.25, clean: 0.1 }, onFail: { mood: -0.15, clean: -0.1 } },
+  { code: 'STORY_ART_DELIVERY', title: 'Kunst voor de villa', roles: WEALTHY_ROLES, kinds: RICH, weight: 0.9,
+    intro: '{lead} heeft een beeldhouwwerk gekocht en wil het meteen op het terras van villa {n}.',
+    chapters: [ch('Het beeld weegt 200 kilo en staat bij de slagboom.', 'STY_ART_DELIVERY', 0), ch('Het moet precies in het midden van het terras.', 'STY_ART_PLACE', 20)],
+    finale: 'Het beeld staat. Bij zonsondergang valt de schaduw precies over de gracht. {lead} is sprakeloos.', fail: 'Het beeld blijft in de krat. {lead} laat het terugsturen naar de galerie.', onSuccess: { mood: 0.25 }, onFail: { mood: -0.1 } },
+  // ---------------------------------------------------------------- families
+  { code: 'STORY_GRANDMA_80', title: 'Oma wordt 80', roles: ['oma', 'opa'], kinds: FAM, weight: 1.2,
     intro: '{lead} van {household} wordt vandaag 80. De familie wil er een feest van maken.',
-    chapters: [ch('Een taart met tachtig kaarsjes (of in elk geval veel).', 'STY_OMA_CAKE', 0), ch('Versier {loc} met ballonnen en slingers.', 'STY_OMA_DECOR', 20), ch('Het animatieteam zingt een lied voor de jarige.', 'STY_OMA_SONG', 20)],
+    chapters: [ch('Een taart met tachtig kaarsjes (of in elk geval veel).', 'STY_BDAY_CAKE', 0), ch('Versier het terras van {loc} met slingers en ballonnen.', 'STY_BDAY_DECOR', 20), ch('Als verrassing: een rondvaart door de grachten.', 'STY_BDAY_SLOEP', 25)],
     finale: '{lead} zegt dat dit de mooiste verjaardag ooit was. En dat is met tachtig jaar ervaring.', fail: 'Het feest blijft klein. {lead} vindt het eigenlijk wel best zo.', onSuccess: { mood: 0.3 }, onFail: { mood: -0.1 } },
-  { code: 'STORY_LOST_TEDDY', title: 'Knuffel kwijt', roles: ['kind'], familiesOnly: true, weight: 1,
-    intro: '{lead} van {household} kan niet slapen: de knuffel is kwijt.',
-    chapters: [ch('Kijk bij de gevonden voorwerpen of de knuffel is ingeleverd.', 'STY_TEDDY_SEARCH', 0), ch('Misschien ligt hij nog bij de speeltuin.', 'STY_TEDDY_PLAYGROUND', 15)],
-    finale: 'De knuffel is terug. {lead} slaapt, de ouders ook.', fail: 'De knuffel blijft zoek. Een nieuwe uit de ParkShop helpt een beetje.', onSuccess: { mood: 0.3 }, onFail: { mood: -0.15 } },
-  { code: 'STORY_SUPERFANS', title: 'Superfans', roles: ['partner'], familiesOnly: true, weight: 1,
-    intro: '{household} is superfan van de BN\'ers in het park en wil er graag eentje ontmoeten.',
-    chapters: [ch('{lead} vraagt bij de receptie of een ontmoeting kan.', 'STY_SUPERFAN_ASK', 0), ch('Er is een BN\'er die wil! Regel een gezellig moment in de Brasserie.', 'STY_SUPERFAN_MEET', 25)],
-    finale: 'Een selfie, een handtekening en een verhaal voor de rest van hun leven.', fail: 'De ontmoeting lukt niet. Toch zwaaien ze vrolijk naar elke auto die voorbij rijdt.', onSuccess: { mood: 0.3 }, onFail: { mood: -0.1 } },
-);
+  { code: 'STORY_GRANDPA_GOLF', title: 'Opa leert golfen', roles: ['opa'], kinds: FAM, weight: 1,
+    intro: '{lead} van {household} heeft nog nooit een golfclub vastgehad, en wil het nu wel eens proberen.',
+    chapters: [ch('Eerst naar de driving range: hoe sla je eigenlijk een bal?', 'STY_GRANDPA_RANGE', 0), ch('Op de baan belanden de ballen in de bunker, de vijver en het bos.', 'STY_GRANDPA_BALLS', 25)],
+    finale: 'Op hole 3 slaat {lead} een bal die bijna in een keer op de green ligt. Het hele terras juicht.', fail: '{lead} vindt golf toch niks en gaat vissen bij de steiger.', onSuccess: { mood: 0.25 }, onFail: { mood: -0.05 } },
+  { code: 'STORY_CANOE', title: 'Kano op avontuur', roles: ['kind'], kinds: FAM, weight: 1.1,
+    intro: 'De kinderen van {household} gaan voor het eerst alleen met de kano de gracht op.',
+    chapters: [ch('Ze zijn een gracht te ver gevaren en weten de weg niet meer terug.', 'STY_CANOE_LOST', 0), ch('Ze zijn terug, kletsnat maar blij.', 'STY_CANOE_DRY', 15)],
+    finale: 'Bij de chocomelk vertellen de kinderen het verhaal al voor de derde keer. Het wordt steeds spannender.', fail: 'De kano gaat voorlopig aan de ketting. De kinderen spelen weer in de speeltuin.', onSuccess: { mood: 0.25 }, onFail: { mood: -0.1 } },
+  { code: 'STORY_HEDGE_FEUD', title: 'Ruzie over de haag', roles: ['partner'], kinds: FAM, noRealPeople: true, weight: 0.9,
+    intro: '{lead} van {household} vindt dat de haag van de buren een meter te hoog is. De buren vinden van niet.',
+    chapters: [ch('Over de haag bij {loc} wordt luidkeels gediscussieerd. Andere gasten pakken popcorn.', 'STY_FEUD_MEDIATE', 0), ch('Nu gaat het over wiens sloep aan welke kant van de steiger ligt.', 'STY_FEUD_JETTY', 20), ch('Er is vrede. Een gezamenlijke barbecue moet het bezegelen.', 'STY_FEUD_DINNER', 25)],
+    finale: 'Na het toetje spreken ze af om volgend jaar weer naast elkaar te boeken.', fail: 'De ruzie blijft. Beide families schrijven een lange review.', onSuccess: { mood: 0.25 }, onFail: { mood: -0.2 } },
+  // ---------------------------------------------------------------- cameo guests (real people added by the game master)
+  { code: 'STORY_CELEB_GUEST', title: 'Een bekende gast', roles: [...GUEST_ROLES], celebrities: ['*'], weight: 1,
+    intro: '{lead} logeert in villa {n}. Het hele park heeft het er al over.',
+    chapters: [ch('Gasten hopen op een handtekening van {lead}. Er staat een rij bij de receptie.', 'STY_CELEB_AUTOGRAPH', 0), ch('{lead} wil rustig eten, maar de brasserie zit vol nieuwsgierige gasten.', 'STY_CELEB_QUIET_TABLE', 30)],
+    finale: '{lead} bedankt het personeel en zwaait bij vertrek naar de hele receptie.', fail: 'Het werd te druk en {lead} at uiteindelijk thuis in de villa.', onSuccess: { mood: 0.25 }, onFail: { mood: -0.1 } },
+];
 export const storyByCode = new Map(STORIES.map((s) => [s.code, s]));
 
 /** Fill story variables. */

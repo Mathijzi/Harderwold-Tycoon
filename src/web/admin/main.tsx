@@ -337,7 +337,7 @@ function Names({ flash }: Ctx) {
     });
   }, []);
   async function save() {
-    const cameos = f.cameos.split(/\r?\n/).map((l) => l.trim()).filter(Boolean).map((l) => { const [name, role, ...rest] = l.split(';').map((x) => x.trim()); return { name, role: (role || 'presentator').toLowerCase(), tagline: rest.join('; ') }; });
+    const cameos = f.cameos.split(/\r?\n/).map((l) => l.trim()).filter(Boolean).map((l) => { const [name, role, ...rest] = l.split(';').map((x) => x.trim()); return { name, role: (role || 'zanger').toLowerCase(), tagline: rest.join('; ') }; });
     const r = await api('POST', '/admin/content/names', { first: lines(f.first), surnames: lines(f.surnames), kids: lines(f.kids), cameos });
     if (r.ok) flash(true, `Opgeslagen: ${r.data.first.length} voornamen, ${r.data.surnames.length} achternamen, ${r.data.kids.length} kindernamen, ${r.data.cameos.length} bekende gasten. Nieuwe gasten gebruiken ze direct.`); else flash(false, errText(r.data));
   }
@@ -360,7 +360,7 @@ function Names({ flash }: Ctx) {
         {box('first', 'Voornamen', 'Eén naam per regel (of met komma’s).')}
         {box('surnames', 'Achternamen', 'Bijvoorbeeld "Van der Zendmast". Huishoudens heten "Familie <achternaam>".')}
         {box('kids', 'Kindernamen', 'Voor kinderen in een huishouden.')}
-        {box('cameos', 'Bekende gasten (cameo)', `Per regel: naam; rol; korte omschrijving. Rollen: ${data.roles.join(', ')}. Ze komen bij de ingebouwde lijst van ruim 80 BN'ers (presentatoren en artiesten); de meeste gasten zijn BN'ers, elk hooguit in één bungalow tegelijk.`)}
+        {box('cameos', 'Bekende gasten (cameo)', `Per regel: naam; rol; korte omschrijving. Rollen: ${data.roles.join(', ')}. Bekende gasten (alleen met hun toestemming) komen tussen de gewone families, de artiesten op schrijverskamp en de vermogende gasten; ieder hooguit in één villa tegelijk. Ze krijgen alleen vriendelijke verhaallijnen.`)}
       </div>
       <p><button className="go" onClick={save}>Namen opslaan</button></p>
     </div>
@@ -368,7 +368,7 @@ function Names({ flash }: Ctx) {
 }
 
 // ---------------------------------------------------------------- own tasks
-const GROUP_NL: Record<string, string> = { onderhoud: 'Onderhoud (TD)', schoonmaak: 'Schoonmaak', receptie: 'Receptie', horeca: 'Horeca', zwembad: 'Zwembad', fietsverhuur: 'Fietsverhuur', terrein: 'Terrein', natuur: 'Natuur', animatie: 'Animatie', chaos: 'Chaos' };
+const GROUP_NL: Record<string, string> = { onderhoud: 'Onderhoud (TD)', schoonmaak: 'Schoonmaak', receptie: 'Receptie', horeca: 'Horeca', golf: 'Golf', water: 'Water & steigers', terrein: 'Terrein', natuur: 'Natuur', recreatie: 'Recreatie', chaos: 'Chaos' };
 const EMPTY = { code: '', group: 'receptie', title: '', text: '', difficulty: 'easy', urgency: 'normal', location: { kind: 'house', facilities: [] as string[] }, weight: 1, when: 'altijd' };
 function OwnTasks({ flash, refresh }: Ctx) {
   const [data, setData] = useState<any>(null);
@@ -399,7 +399,7 @@ function OwnTasks({ flash, refresh }: Ctx) {
           <label>Hoe vaak</label><span className="inline"><input type="range" min={0} max={3} step={0.1} value={f.weight} onChange={(e) => setF({ ...f, weight: Number(e.target.value) })} /> <span>{f.weight === 0 ? 'alleen handmatig' : `gewicht ${f.weight}`}</span></span>
           <span /><span className="inline"><button className="go" onClick={save}>Opslaan</button>{f.code && <button onClick={() => setF(EMPTY)}>Annuleren</button>}</span>
         </div>
-        <p className="muted">De punten volgen uit moeilijkheid × urgentie. Een opdracht in de bungalow uit de categorie Onderhoud of Natuur gaat met de golfkar van de TD.</p>
+        <p className="muted">De punten volgen uit moeilijkheid × urgentie. Een opdracht in de villa uit de categorie Onderhoud of Natuur gaat met de golfkar van de TD.</p>
       </div>
       <div className="panel tall">
         <h2>Eigen opdrachten ({data.tasks.length})</h2>

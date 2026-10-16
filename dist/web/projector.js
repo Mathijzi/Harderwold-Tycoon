@@ -41643,6 +41643,9 @@ function rng(seed) {
 }
 
 // src/shared/house.ts
+function houseLabel(n2) {
+  return n2 >= 1e3 ? `${n2 - 1e3}A` : String(n2);
+}
 function villaVariant(num) {
   const r2 = hrand(num * 97 + 11);
   const W = [10.5, 11.5, 12.5, 13.5][Math.floor(r2() * 4)], D = r2() < 0.5 ? 9 : 10;
@@ -45683,7 +45686,10 @@ var ICON_COLORS = {
   tree: "#4f7f2a",
   paw: "#8a6a3c",
   star: "#b04fc4",
-  bolt: "#e0a21a"
+  bolt: "#e0a21a",
+  golf: "#4b9a3a",
+  boat: "#2f78b8",
+  music: "#cc7400"
 };
 function glyph(ctx2, name, s2, col = "#fff") {
   ctx2.save();
@@ -45903,6 +45909,56 @@ function glyph(ctx2, name, s2, col = "#fff") {
       ctx2.lineTo(6, -2);
       ctx2.lineTo(0, -2);
       ctx2.closePath();
+      ctx2.fill();
+      break;
+    case "golf":
+      ctx2.beginPath();
+      ctx2.moveTo(-2, 8);
+      ctx2.lineTo(-2, -10);
+      ctx2.lineWidth = 2.2;
+      ctx2.stroke();
+      ctx2.beginPath();
+      ctx2.moveTo(-2, -10);
+      ctx2.lineTo(8, -6.5);
+      ctx2.lineTo(-2, -3);
+      ctx2.closePath();
+      ctx2.fill();
+      ctx2.beginPath();
+      ctx2.ellipse(0, 8.5, 9, 2.4, 0, 0, Math.PI * 2);
+      ctx2.lineWidth = 1.8;
+      ctx2.stroke();
+      ctx2.beginPath();
+      ctx2.arc(5.5, 5, 1.9, 0, Math.PI * 2);
+      ctx2.fill();
+      break;
+    case "boat":
+      ctx2.beginPath();
+      ctx2.moveTo(-9, -1);
+      ctx2.lineTo(9, -1);
+      ctx2.lineTo(6, 4);
+      ctx2.lineTo(-6, 4);
+      ctx2.closePath();
+      ctx2.fill();
+      ctx2.fillRect(-3, -6, 6, 5);
+      ctx2.beginPath();
+      for (let x2 = -10; x2 <= 10; x2 += 1) {
+        const yy = 8 + Math.sin(x2 * 0.8) * 1.4;
+        x2 === -10 ? ctx2.moveTo(x2, yy) : ctx2.lineTo(x2, yy);
+      }
+      ctx2.lineWidth = 2;
+      ctx2.stroke();
+      break;
+    case "music":
+      ctx2.beginPath();
+      ctx2.moveTo(-4, 6);
+      ctx2.lineTo(-4, -8);
+      ctx2.lineTo(7, -10);
+      ctx2.lineTo(7, 4);
+      ctx2.lineWidth = 2.4;
+      ctx2.stroke();
+      ctx2.beginPath();
+      ctx2.ellipse(-6.5, 6.5, 3.2, 2.4, -0.4, 0, Math.PI * 2);
+      ctx2.ellipse(4.5, 4.5, 3.2, 2.4, -0.4, 0, Math.PI * 2);
       ctx2.fill();
       break;
     default:
@@ -49715,7 +49771,7 @@ function anchorOf(locationId) {
 }
 function whereOf(locationId) {
   if (!locationId) return "";
-  if (locationId.startsWith("H")) return `Bungalow ${locationId.slice(1)}`;
+  if (locationId.startsWith("H")) return `Villa ${houseLabel(Number(locationId.slice(1)))}`;
   return facilityAt.get(locationId)?.name ?? locationId;
 }
 var crisisIcon = (code) => ({ CRISIS_WATER_MAIN: "drop", CRISIS_BLACKOUT: "bolt", CRISIS_CHECKIN: "key", CRISIS_POOL_CLOSED: "swim", CRISIS_MASCOT: "star", CRISIS_STORM: "bolt", CRISIS_FIRE_ALARM: "alert", CRISIS_PRESS: "alert", CRISIS_WIFI: "bolt", CRISIS_PARKING: "car" })[code] ?? "alert";

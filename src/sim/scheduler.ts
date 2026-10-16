@@ -34,6 +34,8 @@ export interface SchedulerEnv {
   nowMin: number; hour: number; dayIndex: number;
   /** location ids (H<n> for bungalows, F-<key>#i for facilities) */
   occupied: string[]; vacant: string[]; houses: string[]; facilities: Map<string, string[]>;
+  /** optional: does this house location have a feature (detached villa, private pool)? Without it every house qualifies. */
+  hasFeature?: (loc: string, f: string) => boolean;
   occupancy: number;
   openNormal: number;
   /** locations that already have an open incident task */
@@ -95,7 +97,7 @@ export class Scheduler {
     return k - 1;
   }
   private candidates(rule: LocationRule, env: SchedulerEnv): string[] {
-    if (rule.kind === 'house') return rule.vacant ? env.vacant : rule.occupied ? env.occupied : env.houses;
+    if (rule.kind === 'house') { const l = rule.vacant ? env.vacant : rule.occupied ? env.occupied : env.houses; return rule.feature && env.hasFeature ? l.filter((h) => env.hasFeature!(h, rule.feature!)) : l; }
     if (rule.kind === 'grounds') return env.houses;
     return (rule.facilities ?? []).flatMap((f) => env.facilities.get(f) ?? []);
   }

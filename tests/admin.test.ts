@@ -38,16 +38,16 @@ test('admin: own tasks and names are validated, used by the game and kept across
   try {
     let g = new Game(cfg({ dbPath }));
     assert.throws(() => g.saveCustomTask({ group: 'receptie', title: 'x', text: 'kort' } as any), (e: any) => e.code === 'invalid_content' && e.extra.problems.length >= 2);
-    assert.throws(() => g.saveCustomTask({ group: 'zwembad', title: 'Zwembroek kwijt', text: 'Een gast is zijn zwembroek kwijt in het zwembad. Zoek mee.', difficulty: 'easy', urgency: 'normal', location: { kind: 'facility', facilities: ['ZZ'] }, weight: 1, when: 'altijd' }), (e: any) => e.code === 'invalid_content');
-    const ct = g.saveCustomTask({ group: 'zwembad', title: 'Zwembroek kwijt', text: 'Een gast is de zwembroek kwijt geraakt in het zwembad. Zoek mee bij de gevonden voorwerpen.', difficulty: 'easy', urgency: 'high', location: { kind: 'facility', facilities: ['J'] }, weight: 1.5, when: 'dag' });
+    assert.throws(() => g.saveCustomTask({ group: 'golf', title: 'Golftas kwijt', text: 'Een gast is zijn golftas kwijt op de range. Zoek mee.', difficulty: 'easy', urgency: 'normal', location: { kind: 'facility', facilities: ['ZZ'] }, weight: 1, when: 'altijd' }), (e: any) => e.code === 'invalid_content');
+    const ct = g.saveCustomTask({ group: 'golf', title: 'Golftas kwijt', text: 'Een gast is de golftas kwijt geraakt op de driving range. Zoek mee bij de ballenautomaat.', difficulty: 'easy', urgency: 'high', location: { kind: 'facility', facilities: ['R'] }, weight: 1.5, when: 'dag' });
     assert.match(ct.code, /^CUST_/);
     assert.ok(templateByCode.get(ct.code));
     const task = g.createIncident({ template: ct.code });
-    assert.equal(task.category, 'Zwembad'); assert.ok(task.locationId?.startsWith('F-J'));
-    const edited = g.saveCustomTask({ ...ct, title: 'Zwembroek zoek' });
-    assert.equal(edited.code, ct.code); assert.equal(templateByCode.get(ct.code)!.title, 'Zwembroek zoek');
+    assert.equal(task.category, 'Golf'); assert.ok(task.locationId?.startsWith('F-R'));
+    const edited = g.saveCustomTask({ ...ct, title: 'Golftas zoek' });
+    assert.equal(edited.code, ct.code); assert.equal(templateByCode.get(ct.code)!.title, 'Golftas zoek');
     assert.throws(() => g.setNames({ cameos: [{ name: 'Test Persoon', role: 'astronaut' as any, tagline: '' }] }), (e: any) => e.code === 'invalid_content');
-    g.setNames({ first: ['Ferdinand', 'Ferdinand', 'X'], surnames: ['Van Testenburg'], kids: [], cameos: [{ name: 'Test Persoon', role: 'presentator', tagline: 'collega op vakantie' }] });
+    g.setNames({ first: ['Ferdinand', 'Ferdinand', 'X'], surnames: ['Van Testenburg'], kids: [], cameos: [{ name: 'Test Persoon', role: 'zanger', tagline: 'zanger op schrijverskamp' }] });
     assert.deepEqual(customNames.first, ['Ferdinand'], 'deduplicated, too short dropped');
     let seenCameo = false, seenSurname = false;
     for (let i = 0; i < 3000; i++) { const h = makeHousehold(rng(i)); if (h.household.celebrity === 'eigen-test-persoon') seenCameo = true; if (h.household.name.includes('Van Testenburg')) seenSurname = true; }

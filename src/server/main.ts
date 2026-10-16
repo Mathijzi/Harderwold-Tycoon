@@ -15,7 +15,7 @@ const here = dirname(fileURLToPath(import.meta.url));
 const root = existsSync(join(here, '..', 'data')) ? join(here, '..') : join(here, '..', '..');
 const env = (k: string, d: string) => process.env[k] ?? d;
 
-console.log('Park laden (kaart, wegennet, 341 bungalows) ...');
+console.log('Park laden (kaart, wegennet, villa\'s) ...');
 const t0 = Date.now();
 const game = new Game({
   dbPath: env('DB_PATH', join(root, 'runtime', 'harderwold.sqlite')),

@@ -8,7 +8,7 @@ import { openApiSpec } from './openapi.ts';
 import { MapError } from './mapstore.ts';
 import { REVIEW_ITEMS } from '../shared/mapdoc.ts';
 import { TEMPLATES, CRISES } from '../shared/tasklib.ts';
-import { STORIES, MEDIA_ROLES } from '../shared/guestlib.ts';
+import { STORIES, GUEST_ROLES } from '../shared/guestlib.ts';
 import { GROUPS } from './content.ts';
 import { mapReport } from './mapreport.ts';
 
@@ -79,15 +79,15 @@ export function startHttp(game: Game, opts: { port: number; host: string; webRoo
     const made = [];
     for (let i = 0; i < n; i++) { const b = game.park.scheduleArrival({ houseNumber: c.body.houseNumber ? Number(c.body.houseNumber) : undefined }); if (b) made.push({ bookingId: b.id, houseNumber: b.houseNumber, vehicleId: b.vehicleId, household: b.household }); }
     game.audit('admin', 'arrivals', { requested: n, created: made.length });
-    if (!made.length) throw new ApiError(409, 'no_vacant_bungalow', 'Geen vrije (schone) bungalow beschikbaar in deze sector');
-    return { created: made, note: made.length < n ? `Slechts ${made.length} vrije bungalows` : undefined };
+    if (!made.length) throw new ApiError(409, 'no_vacant_bungalow', 'Geen vrije (schone) villa beschikbaar in deze sector');
+    return { created: made, note: made.length < n ? `Slechts ${made.length} vrije villa's` : undefined };
   });
   add('POST', `${V}/admin/departures`, 'admin', (c) => {
     const n = Math.max(1, Math.min(10, Number(c.body.count ?? 1)));
     const made = [];
     for (let i = 0; i < n; i++) { const b = game.park.depart({ houseNumber: c.body.houseNumber ? Number(c.body.houseNumber) : undefined }); if (b) made.push({ bookingId: b.id, houseNumber: b.houseNumber, vehicleId: b.vehicleId, household: b.household }); }
     game.audit('admin', 'departures', { requested: n, created: made.length });
-    if (!made.length) throw new ApiError(409, 'no_household', 'Geen huishouden in een bungalow om te laten vertrekken');
+    if (!made.length) throw new ApiError(409, 'no_household', 'Geen huishouden in een villa om te laten vertrekken');
     return { departing: made };
   });
   add('POST', `${V}/admin/speed`, 'admin', (c) => { game.setTimeScale(Number(c.body.timeScale)); return game.parkSummary(); });
@@ -147,7 +147,7 @@ export function startHttp(game: Game, opts: { port: number; host: string; webRoo
   add('GET', `${V}/admin/ledger`, 'admin', (c) => game.ledger(Number(c.url.searchParams.get('limit') ?? 200)));
   add('POST', `${V}/admin/players/:id/score`, 'admin', (c) => game.adjustScore(c.params.id, Number(c.body.delta), String(c.body.reason ?? '')));
   add('GET', `${V}/admin/export`, 'admin', () => game.exportAll());
-  add('GET', `${V}/admin/content`, 'admin', () => ({ names: game.content.names(), tasks: game.content.tasks, facilities: game.facilities(), roles: MEDIA_ROLES, groups: GROUPS }));
+  add('GET', `${V}/admin/content`, 'admin', () => ({ names: game.content.names(), tasks: game.content.tasks, facilities: game.facilities(), roles: GUEST_ROLES, groups: GROUPS }));
   add('POST', `${V}/admin/content/names`, 'admin', (c) => game.setNames(c.body as never));
   add('POST', `${V}/admin/content/tasks`, 'admin', (c) => game.saveCustomTask(c.body as never));
   add('POST', `${V}/admin/content/tasks/:code/delete`, 'admin', (c) => game.deleteCustomTask(c.params.code));

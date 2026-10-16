@@ -3,7 +3,7 @@
 // Every own task is validated with the same rules as the built-in library before it is accepted.
 import { DB } from './db.ts';
 import { TEMPLATES, templateByCode, t as makeTemplate, Group, Difficulty, Urgency, LocationRule, validateLibrary } from '../shared/tasklib.ts';
-import { setCustomNames, customNames, MEDIA_ROLES, Role, Cameo } from '../shared/guestlib.ts';
+import { setCustomNames, customNames, GUEST_ROLES, Role, Cameo } from '../shared/guestlib.ts';
 
 export interface NameLists { first: string[]; surnames: string[]; kids: string[]; cameos: { name: string; role: Role; tagline: string }[] }
 export interface CustomTask {
@@ -13,7 +13,7 @@ export interface CustomTask {
   weight: number;
   when: 'altijd' | 'dag' | 'nacht';
 }
-export const GROUPS: Exclude<Group, 'crisis'>[] = ['onderhoud', 'schoonmaak', 'receptie', 'horeca', 'zwembad', 'fietsverhuur', 'terrein', 'natuur', 'animatie', 'chaos'];
+export const GROUPS: Exclude<Group, 'crisis'>[] = ['onderhoud', 'schoonmaak', 'receptie', 'horeca', 'golf', 'water', 'terrein', 'natuur', 'recreatie', 'chaos'];
 
 export class ContentError extends Error { constructor(public problems: string[]) { super(problems.join('; ')); } }
 
@@ -40,7 +40,7 @@ export class ContentStore {
     for (const [i, c] of (Array.isArray(n.cameos) ? n.cameos : []).entries()) {
       const name = String(c?.name ?? '').trim(), role = String(c?.role ?? '').trim() as Role, tagline = String(c?.tagline ?? '').trim();
       if (name.length < 2 || name.length > 60) { problems.push(`bekende gast ${i + 1}: naam ontbreekt`); continue; }
-      if (!MEDIA_ROLES.includes(role)) { problems.push(`${name}: onbekende rol "${role}" (kies uit ${MEDIA_ROLES.join(', ')})`); continue; }
+      if (!GUEST_ROLES.includes(role)) { problems.push(`${name}: onbekende rol "${role}" (kies uit ${GUEST_ROLES.join(', ')})`); continue; }
       cameos.push({ key: `eigen-${slug(name)}`, name, role, tagline: tagline || `${name} is een weekje op vakantie`, companions: ['partner'] });
     }
     if (problems.length) throw new ContentError(problems);

@@ -1,5 +1,5 @@
 // Game server core: task state machine, score ledger, gate passage tokens, sim loop, persistence, realtime fan-out.
-import { houseLabel } from '../shared/house.ts';
+import { houseLabel, isVilla, villaVariant } from '../shared/house.ts';
 import { createHash, randomBytes, randomUUID } from 'node:crypto';
 import { DB, openDb, tx, getMeta, setMeta, wipe } from './db.ts';
 import { loadMapJson, loadNetwork, clearNetworkCache, mapDir } from '../sim/load.ts';
@@ -267,8 +267,8 @@ export class Game {
       id: `T-${kind}-${b.vehicleId}`, template: kind === 'checkin' ? 'REC_CHECKIN' : 'REC_CHECKOUT', kind, category: 'Receptie',
       title: kind === 'checkin' ? `Check-in ${b.household}` : `Check-out ${b.household}`,
       description: kind === 'checkin'
-        ? `${b.household} (${lead}${b.guests.length > 2 ? ' e.a.' : ''}) wacht met kenteken ${plate} voor de inrijslagboom. Controleer de reservering voor bungalow ${houseLabel(b.houseNumber)} en geef de sleutel mee.`
-        : `${b.household} staat met kenteken ${plate} voor de uitrijslagboom. Neem de sleutel van bungalow ${houseLabel(b.houseNumber)} in en rond de eindafrekening af.`,
+        ? `${b.household} (${lead}${b.guests.length > 2 ? ' e.a.' : ''}) wacht met kenteken ${plate} voor de inrijslagboom. Controleer de reservering voor villa ${houseLabel(b.houseNumber)} en geef de sleutel mee.`
+        : `${b.household} staat met kenteken ${plate} voor de uitrijslagboom. Neem de sleutelkaart van villa ${houseLabel(b.houseNumber)} in en rond de eindafrekening af.`,
       location_id: kind === 'checkin' ? 'F-A' : `H${b.houseNumber}`, booking_id: b.id, vehicle_id: b.vehicleId, gate_id: gateId,
       icon: kind === 'checkin' ? 'checkin' : 'checkout', offered_at: this.nowMs(), claim_seconds: 300, difficulty: 'easy', urgency: 'normal', points: pointsFor('easy', 'normal'),
     });
@@ -298,8 +298,14 @@ export class Game {
       return { id: n === 1 ? `F-${f.key}` : `F-${f.key}${n}`, key: f.key, name: f.name, pt: f.pt };
     });
   }
+  /** villa features for task placement: detached villas (jetty, jacuzzi, sauna) and private pools (villas.ts variants) */
+  hasFeature(loc: string, f: string) {
+    const h = this.net.houses.find((x) => x.id === loc);
+    if (!h || !isVilla(h.legendType)) return false;
+    return f === 'villa' || (f === 'pool' && villaVariant(h.number).pool);
+  }
   locationName(id: string, grounds = false) {
-    if (id.startsWith('H')) { const n = houseLabel(Number(id.slice(1))); return grounds ? `het pad bij bungalow ${n}` : `bungalow ${n}`; }
+    if (id.startsWith('H')) { const n = houseLabel(Number(id.slice(1))); return grounds ? `de straat bij villa ${n}` : `villa ${n}`; }
     return this.facIndex.find((f) => f.id === id)?.name ?? id;
   }
   private schedEnv(): SchedulerEnv {
@@ -314,6 +320,7 @@ export class Game {
     const open = this.db.prepare("SELECT location_id, parent_id FROM tasks WHERE kind = 'incident' AND state IN ('offered','claimed')").all() as { location_id: string; parent_id: string | null }[];
     const clock = this.localClock();
     return {
+      hasFeature: (l: string, f: string) => this.hasFeature(l, f),
       nowMin: this.gameMin(), hour: clock.hour, dayIndex: clock.dayIndex, occupied, vacant, houses, facilities,
       occupancy: this.net.houses.length ? occupied.length / this.net.houses.length : 0,
       openNormal: open.filter((o) => !o.parent_id).length, busy: new Set(open.map((o) => o.location_id)),
@@ -326,9 +333,10 @@ export class Game {
    *  open task (a crisis at the pool must not vanish because a normal pool task is open) */
   private pickLocation(tpl: TaskTemplate, env: SchedulerEnv, allowBusy = false): string | undefined {
     const r = tpl.location;
-    const list = r.kind === 'house' ? (r.vacant ? env.vacant : r.occupied ? env.occupied : env.houses) : r.kind === 'grounds' ? env.houses : (r.facilities ?? []).flatMap((f) => env.facilities.get(f) ?? []);
+    const feat = (l: string) => !r.feature || this.hasFeature(l, r.feature);
+    const list = (r.kind === 'house' ? (r.vacant ? env.vacant : r.occupied ? env.occupied : env.houses) : r.kind === 'grounds' ? env.houses : (r.facilities ?? []).flatMap((f) => env.facilities.get(f) ?? [])).filter(feat);
     const free = list.filter((l) => !env.busy.has(l));
-    const pool = free.length ? free : r.kind === 'house' && r.occupied ? env.houses.filter((l) => !env.busy.has(l)) : allowBusy ? list : [];
+    const pool = free.length ? free : r.kind === 'house' && r.occupied ? env.houses.filter((l) => feat(l) && !env.busy.has(l)) : allowBusy ? list : [];
     return pool.length ? this.botRand.pick(pool) : undefined;
   }
 
@@ -346,7 +354,7 @@ export class Game {
       if (!tpl) throw new ApiError(409, 'no_location', 'Geen geschikte opdracht of vrije locatie');
     }
     let loc = opts.locationId ?? (opts.houseNumber ? `H${opts.houseNumber}` : undefined);
-    if (loc && loc.startsWith('H') && !this.net.houses.some((h) => h.id === loc)) throw new ApiError(404, 'no_location', `Bungalow ${loc.slice(1)} bestaat niet`);
+    if (loc && loc.startsWith('H') && !this.net.houses.some((h) => h.id === loc)) throw new ApiError(404, 'no_location', `Villa ${houseLabel(Number(loc.slice(1)))} bestaat niet`);
     if (loc && tpl.location.kind === 'facility' && !loc.startsWith('F-')) loc = undefined; // a facility task belongs at its facility
     loc ??= this.pickLocation(tpl, env, !!opts.parentId || !!opts.template);
     if (!loc) throw new ApiError(409, 'no_location', 'Geen vrije locatie');
@@ -713,7 +721,7 @@ export class Game {
     try { return this.stories.start(opts); } catch (e) {
       const m = (e as Error).message;
       if (m === 'unknown_story') throw new ApiError(422, 'unknown_story', 'Onbekende verhaallijn');
-      if (m === 'no_household') throw new ApiError(409, 'no_household', 'Geen huishouden in een bungalow past bij deze verhaallijn (of het heeft al een verhaal)');
+      if (m === 'no_household') throw new ApiError(409, 'no_household', 'Geen huishouden in een villa past bij deze verhaallijn (of het heeft al een verhaal)');
       throw e;
     }
   }
@@ -739,8 +747,8 @@ export class Game {
   private assertTechOnSite(t: TaskRow) {
     const st = this.park.techStatus(t.id);
     if (!st || st.onSite) return;
-    const where = st.phase === 'pending' ? 'wacht nog op een vrije golfkar' : st.phase === 'driving' ? `rijdt met ${st.vehicleId} naar bungalow ${houseLabel(st.houseNumber)}` : `loopt naar bungalow ${houseLabel(st.houseNumber)}`;
-    throw new ApiError(409, 'technician_not_on_site', `De monteur is nog niet ter plaatse (${where}). Afronden kan zodra hij in de bungalow is.`, { technician: st });
+    const where = st.phase === 'pending' ? 'wacht nog op een vrije golfkar' : st.phase === 'driving' ? `rijdt met ${st.vehicleId} naar villa ${houseLabel(st.houseNumber)}` : `loopt naar bungalow ${houseLabel(st.houseNumber)}`;
+    throw new ApiError(409, 'technician_not_on_site', `De monteur is nog niet ter plaatse (${where}). Afronden kan zodra hij in de villa is.`, { technician: st });
   }
 
   // ------------------------------------------------------------------ gate passage tokens
@@ -970,7 +978,7 @@ export class Game {
     const code = String(o.code ?? '').trim().toUpperCase();
     if (!/^[A-Z0-9]{4,12}$/.test(code)) throw new ApiError(422, 'invalid_code', 'Spelcode: 4-12 letters of cijfers');
     const occ = Number(o.initialOccupied ?? this.cfg.initialOccupied);
-    if (!(Number.isInteger(occ) && occ >= 0 && occ <= 300)) throw new ApiError(422, 'invalid_occupancy', 'Beginbezetting: 0-300 bewoonde bungalows');
+    if (!(Number.isInteger(occ) && occ >= 0 && occ <= 300)) throw new ApiError(422, 'invalid_occupancy', 'Beginbezetting: 0-300 bewoonde villa\'s');
     // session plan (optional): end date/time and how many check-ins / check-outs spread over the session
     let plan: { endMs: number; arrivals: number; departures: number } | null = null;
     if (o.endsAt !== undefined && o.endsAt !== null && o.endsAt !== '') {
@@ -981,7 +989,7 @@ export class Game {
       const a = Number(o.arrivals ?? 0), d = Number(o.departures ?? 0);
       if (!(Number.isInteger(a) && a >= 0 && a <= 2000)) throw new ApiError(422, 'invalid_arrivals', 'Aantal inchecks: 0-2000');
       if (!(Number.isInteger(d) && d >= 0 && d <= occ + a)) throw new ApiError(422, 'invalid_departures', `Aantal uitchecks: 0 tot ${occ + a} (er kunnen niet meer gasten vertrekken dan er zijn)`);
-      if (occ + a - d > 330) throw new ApiError(422, 'too_many_guests', 'Zoveel gasten tegelijk passen niet in het park (341 bungalows)');
+      if (occ + a - d > 330) throw new ApiError(422, 'too_many_guests', 'Zoveel gasten tegelijk passen niet in het park (339 villa\'s)');
       plan = { endMs, arrivals: a, departures: d };
     }
     if (this.leaderboard().length) this.saveGame(`Automatisch bewaard vóór nieuw spel "${name}"`, true);

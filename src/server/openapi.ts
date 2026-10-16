@@ -26,7 +26,7 @@ export function openApiSpec() {
       '/sessions/join': { post: { summary: 'Aanmelden met spelcode en naam', requestBody: { required: true, content: { 'application/json': { schema: { type: 'object', required: ['gameCode', 'displayName'], properties: { gameCode: { type: 'string' }, displayName: { type: 'string' } } } } } }, responses: { 200: r('playerId + token'), ...errs } } },
       '/me': { get: { security: bearer, summary: 'Eigen speler, score en actieve opdrachten', responses: { 200: r('OK'), ...errs } } },
       '/park': { get: { summary: 'Parkoverzicht (tijd, tevredenheid, open taken, slagbomen)', responses: { 200: r('OK') } } },
-      '/locations': { get: { summary: 'Bungalows en voorzieningen in de sector', responses: { 200: r('OK') } } },
+      '/locations': { get: { summary: 'Villa\'s en voorzieningen van het park', responses: { 200: r('OK') } } },
       '/locations/{id}': { get: { summary: 'Eén locatie', parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }], responses: { 200: r('OK'), 404: errs[404] } } },
       '/leaderboard': { get: { summary: 'Klassement', responses: { 200: r('OK') } } },
       '/tasks': { get: { security: bearer, summary: 'Opdrachten', parameters: [{ name: 'state', in: 'query', schema: { enum: ['offered', 'claimed', 'completed', 'expired', 'cancelled'] } }], responses: { 200: r('OK', { type: 'array', items: { $ref: '#/components/schemas/Task' } }), ...errs } } },

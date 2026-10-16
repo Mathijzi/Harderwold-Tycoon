@@ -23,7 +23,7 @@ test('weather: changes over two game days with plausible durations and temperatu
   }
   assert.ok(changes >= 12 && changes <= 80, `${changes} changes in 48 h`);
   assert.ok(seen.size >= 4, `kinds seen: ${[...seen]}`);
-  assert.ok(groupFactor('regen', 'terrein') > 1 && groupFactor('regen', 'fietsverhuur') < 1 && groupFactor('zon', 'fietsverhuur') > 1);
+  assert.ok(groupFactor('regen', 'terrein') > 1 && groupFactor('regen', 'water') < 1 && groupFactor('zon', 'water') > 1 && groupFactor('onweer', 'golf') < 1);
 });
 
 test('weather: game master sets it, the scheduler follows it, a storm crisis brings thunder, a save keeps it', () => {
@@ -39,7 +39,7 @@ test('weather: game master sets it, the scheduler follows it, a storm crisis bri
     g.setWeather(kind, 600);
     const env = (g as any).schedEnv();
     let outdoor = 0, bikes = 0;
-    for (let i = 0; i < 600; i++) { const s = g.scheduler.suggest({ ...env, lastAt: () => undefined, busy: new Set() }); const tp = s && (g as any).constructor && s.code; if (!tp) continue; if (/^GRD_|^MAINT_/.test(s.code)) outdoor++; if (/^BIKE_/.test(s.code)) bikes++; }
+    for (let i = 0; i < 600; i++) { const s = g.scheduler.suggest({ ...env, lastAt: () => undefined, busy: new Set() }); const tp = s && (g as any).constructor && s.code; if (!tp) continue; if (/^GRD_|^MAINT_/.test(s.code)) outdoor++; if (/^WATER_|^GOLF_/.test(s.code)) bikes++; }
     return { outdoor, bikes };
   };
   const rain = count('regen'), sun = count('zon');

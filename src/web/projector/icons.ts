@@ -5,7 +5,7 @@ type Ctx = CanvasRenderingContext2D;
 export const ICON_COLORS: Record<string, string> = {
   wrench: '#f08a24', alert: '#d9423a', broom: '#f0a43a', key: '#1aa3a8', bug: '#7a9b2e', drop: '#1f8fc9',
   checkin: '#1aa3a8', checkout: '#5b6fd6', clean: '#1aa3a8', car: '#2d3a45',
-  food: '#c2552f', swim: '#1f8fc9', bike: '#3a8f5c', tree: '#4f7f2a', paw: '#8a6a3c', star: '#b04fc4', bolt: '#e0a21a',
+  food: '#c2552f', swim: '#1f8fc9', bike: '#3a8f5c', tree: '#4f7f2a', paw: '#8a6a3c', star: '#b04fc4', bolt: '#e0a21a', golf: '#4b9a3a', boat: '#2f78b8', music: '#cc7400',
 };
 
 /** Draw a glyph centred at (0,0) within a unit box of size s. */
@@ -60,6 +60,18 @@ export function glyph(ctx: Ctx, name: string, s: number, col = '#fff') {
       ctx.beginPath(); for (let i = 0; i < 10; i++) { const r = i % 2 ? 4 : 9.5, a = -Math.PI / 2 + (i * Math.PI) / 5; i ? ctx.lineTo(Math.cos(a) * r, Math.sin(a) * r) : ctx.moveTo(Math.cos(a) * r, Math.sin(a) * r); } ctx.closePath(); ctx.fill(); break;
     case 'bolt':
       ctx.beginPath(); ctx.moveTo(2, -10); ctx.lineTo(-6, 2); ctx.lineTo(0, 2); ctx.lineTo(-2, 10); ctx.lineTo(6, -2); ctx.lineTo(0, -2); ctx.closePath(); ctx.fill(); break;
+    case 'golf': // flag on a green with a ball
+      ctx.beginPath(); ctx.moveTo(-2, 8); ctx.lineTo(-2, -10); ctx.lineWidth = 2.2; ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(-2, -10); ctx.lineTo(8, -6.5); ctx.lineTo(-2, -3); ctx.closePath(); ctx.fill();
+      ctx.beginPath(); ctx.ellipse(0, 8.5, 9, 2.4, 0, 0, Math.PI * 2); ctx.lineWidth = 1.8; ctx.stroke();
+      ctx.beginPath(); ctx.arc(5.5, 5, 1.9, 0, Math.PI * 2); ctx.fill(); break;
+    case 'boat': // sloep on waves
+      ctx.beginPath(); ctx.moveTo(-9, -1); ctx.lineTo(9, -1); ctx.lineTo(6, 4); ctx.lineTo(-6, 4); ctx.closePath(); ctx.fill();
+      ctx.fillRect(-3, -6, 6, 5);
+      ctx.beginPath(); for (let x = -10; x <= 10; x += 1) { const yy = 8 + Math.sin(x * 0.8) * 1.4; x === -10 ? ctx.moveTo(x, yy) : ctx.lineTo(x, yy); } ctx.lineWidth = 2; ctx.stroke(); break;
+    case 'music': // double note
+      ctx.beginPath(); ctx.moveTo(-4, 6); ctx.lineTo(-4, -8); ctx.lineTo(7, -10); ctx.lineTo(7, 4); ctx.lineWidth = 2.4; ctx.stroke();
+      ctx.beginPath(); ctx.ellipse(-6.5, 6.5, 3.2, 2.4, -0.4, 0, Math.PI * 2); ctx.ellipse(4.5, 4.5, 3.2, 2.4, -0.4, 0, Math.PI * 2); ctx.fill(); break;
     default:
       ctx.beginPath(); ctx.arc(0, 0, 6, 0, Math.PI * 2); ctx.fill();
   }

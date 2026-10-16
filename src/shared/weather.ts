@@ -82,11 +82,11 @@ export function forceWeather(s: WeatherState, kind: WeatherKind, nowMs: number, 
 /** how the weather shifts which tasks happen: multiplier per task group (1 = unchanged) */
 export function groupFactor(kind: WeatherKind, group: string): number {
   const t: Partial<Record<WeatherKind, Record<string, number>>> = {
-    zon: { fietsverhuur: 1.6, horeca: 1.3, zwembad: 1.2, animatie: 1.1, natuur: 1.1 },
-    halfbewolkt: { fietsverhuur: 1.2 },
-    regen: { terrein: 1.6, onderhoud: 1.3, schoonmaak: 1.3, zwembad: 1.2, animatie: 1.3, fietsverhuur: 0.4, natuur: 0.7 },
-    onweer: { terrein: 2.0, onderhoud: 1.6, chaos: 1.3, fietsverhuur: 0.2, zwembad: 0.6, natuur: 0.6 },
-    mist: { terrein: 1.2, fietsverhuur: 0.7 },
+    zon: { water: 1.6, golf: 1.4, horeca: 1.3, recreatie: 1.1, natuur: 1.1 },
+    halfbewolkt: { water: 1.2, golf: 1.1 },
+    regen: { terrein: 1.6, onderhoud: 1.3, schoonmaak: 1.3, recreatie: 1.2, water: 0.4, golf: 0.5, natuur: 0.7 },
+    onweer: { terrein: 2.0, onderhoud: 1.6, chaos: 1.3, water: 0.2, golf: 0.2, natuur: 0.6 },
+    mist: { terrein: 1.2, water: 0.7, golf: 0.7 },
   };
   return t[kind]?.[group] ?? 1;
 }

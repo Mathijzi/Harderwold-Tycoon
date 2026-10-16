@@ -4,7 +4,7 @@ import { cam, setupCamera, P, Pv, STAGE, V2, hrand, mkCanvas, reduceCanvas } fro
 import { buildHouse, Sprite } from './houses.ts';
 import { buildVilla, buildTerraced } from './villas.ts';
 import { buildApartments } from './apartments.ts';
-import { houseSize, isVilla, isTerraced } from '../../shared/house.ts';
+import { houseSize, isVilla, isTerraced, houseLabel } from '../../shared/house.ts';
 import { buildKiosk, drawSign, drawFlag, drawLamp, drawIntercom, drawCharger, drawStaffSign, Structure } from './buildings.ts';
 import { Massing, massingBlocks, buildBlock, buildTent, blockCorners, terraceFor, drawParasol, drawBollard, Block } from './complex.ts';
 import { pointInPolygon } from '../../shared/geom.ts';
@@ -596,7 +596,7 @@ function anchorOf(locationId: string | null): V2 {
 }
 function whereOf(locationId: string | null) {
   if (!locationId) return '';
-  if (locationId.startsWith('H')) return `Bungalow ${locationId.slice(1)}`;
+  if (locationId.startsWith('H')) return `Villa ${houseLabel(Number(locationId.slice(1)))}`;
   return facilityAt.get(locationId)?.name ?? locationId;
 }
 const crisisIcon = (code: string) => ({ CRISIS_WATER_MAIN: 'drop', CRISIS_BLACKOUT: 'bolt', CRISIS_CHECKIN: 'key', CRISIS_POOL_CLOSED: 'swim', CRISIS_MASCOT: 'star', CRISIS_STORM: 'bolt', CRISIS_FIRE_ALARM: 'alert', CRISIS_PRESS: 'alert', CRISIS_WIFI: 'bolt', CRISIS_PARKING: 'car' } as Record<string, string>)[code] ?? 'alert';

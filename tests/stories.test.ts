@@ -1,8 +1,8 @@
-// Guests (Hilversum media households) and storylines: valid library, seeded households, a full storyline through the
+// Guests (families, songwriting camp, well-to-do guests) and storylines: valid library, seeded households, a full storyline through the
 // regular task API, and the bad endings (chapter not picked up, household leaves).
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { STORIES, validateStories, makeHousehold, CELEBRITIES, MEDIA_ROLES } from '../src/shared/guestlib.ts';
+import { STORIES, validateStories, makeHousehold, CELEBRITIES, ARTIST_ROLES, WEALTHY_ROLES } from '../src/shared/guestlib.ts';
 import { templateByCode, TEMPLATES } from '../src/shared/tasklib.ts';
 import { rng } from '../src/shared/geom.ts';
 import { Game, GameConfig } from '../src/server/game.ts';
@@ -16,21 +16,22 @@ test('guests: storyline library is valid, story tasks are never scheduled on the
   assert.ok(TEMPLATES.filter((t) => t.storyOnly).every((t) => t.weight === 0), 'story tasks only come from a storyline');
   const a = makeHousehold(rng(42)), b = makeHousehold(rng(42));
   assert.deepEqual(a, b, 'same seed, same household');
-  let celebs = 0;
+  const kinds = { familie: 0, artiest: 0, vermogend: 0 };
   for (let i = 0; i < 2000; i++) {
     const h = makeHousehold(rng(i * 7 + 1));
     assert.ok(h.guests.length >= 1 && h.guests.length <= 5);
-    assert.ok(!/Microfoon|Zendmast|Autocue/.test(h.household.name), 'no silly made-up surnames');
-    if (h.household.celebrity) { celebs++; assert.ok(CELEBRITIES.some((c) => c.key === h.household.celebrity)); assert.ok(MEDIA_ROLES.includes(h.guests[0].role)); continue; }
-    assert.match(h.household.name, /^Familie /);
+    assert.equal(h.household.celebrity, undefined, 'no real people unless the game master adds them');
+    kinds[h.household.kind]++;
+    if (h.household.kind === 'artiest') { assert.ok(ARTIST_ROLES.includes(h.guests[0].role)); assert.match(h.household.name, /^Schrijverskamp /); assert.ok(h.household.label && h.household.project); }
+    else if (h.household.kind === 'vermogend') { assert.ok(WEALTHY_ROLES.includes(h.guests[0].role)); assert.match(h.household.name, /^Familie /); }
+    else { assert.match(h.household.name, /^Familie /); assert.equal(h.household.label, ''); }
   }
-  assert.ok(celebs > 1500, `most households are BN'ers (${celebs}/2000)`);
-  // each BN'er at most once in the park: with all of them taken, the next household is an ordinary family
-  const all = new Set(CELEBRITIES.map((c) => c.key));
-  assert.equal(makeHousehold(rng(5), all).household.celebrity, undefined);
-  // storylines never put an invented conflict on a real person
-  for (const s of STORIES) if (s.celebrities) for (const k of s.celebrities) if (k !== '*') assert.ok(CELEBRITIES.some((c) => c.key === k), s.code);
-  assert.ok(STORIES.find((s) => s.code === 'STORY_TALKSHOW_FEUD')!.noRealPeople);
+  // client: ordinary Dutch families, artists on a songwriting camp and well-to-do guests
+  assert.ok(kinds.familie > 800 && kinds.artiest > 350 && kinds.vermogend > 350, JSON.stringify(kinds));
+  assert.equal(CELEBRITIES.length, 0, 'no built-in real people');
+  // storylines that invent a conflict never pick a real person (cameo)
+  assert.ok(STORIES.find((s) => s.code === 'STORY_HEDGE_FEUD')!.noRealPeople);
+  for (const s of STORIES) for (const c of s.chapters) assert.ok(!/BN'er|omroep|talkshow/i.test(c.text), `${s.code}: Harderwold copy`);
 });
 
 test('stories: a storyline runs chapter by chapter through claim/complete and ends well; a missed chapter or departure ends it', () => {

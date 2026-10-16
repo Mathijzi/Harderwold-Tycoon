@@ -21,7 +21,7 @@ test('library: at least 100 distinct schedulable templates, 10 per group, every 
   for (const [g, n] of groups) assert.ok(n >= 10, `group ${g}: ${n}`);
   for (const t of TEMPLATES) assert.ok(pointsFor(t.difficulty, t.urgency) > 0 && pointsFor(t.difficulty, t.urgency) % 5 === 0, t.code);
   assert.ok(CRISES.length >= 5);
-  for (const c of ['CRISIS_WATER_MAIN', 'CRISIS_BLACKOUT', 'CRISIS_CHECKIN', 'CRISIS_POOL_CLOSED', 'CRISIS_MASCOT']) assert.ok(CRISES.some((x) => x.code === c), c);
+  for (const c of ['CRISIS_WATER_MAIN', 'CRISIS_BLACKOUT', 'CRISIS_CHECKIN', 'CRISIS_ALGAE', 'CRISIS_SLOEPEN_DRIFT']) assert.ok(CRISES.some((x) => x.code === c), c);
 });
 
 test('scheduler: seeded 48 h runs give 2-4 normal tasks per daytime hour, fewer at night, 1-3 crises per day, cooldowns respected', () => {
@@ -60,19 +60,19 @@ test('scheduler: seeded 48 h runs give 2-4 normal tasks per daytime hour, fewer 
 
 test('game: library incidents get a location, copy and points; completion improves the location; flood cap holds', () => {
   const g = new Game(cfg());
-  const t = g.createIncident({ template: 'POOL_SLIPPERY_FLOOR' });
+  const t = g.createIncident({ template: 'HK_SANITAIR' });
   assert.equal(t.locationId, 'F-J');
   assert.match(t.description, /douches/);
   assert.equal(t.points, pointsFor('easy', 'high'));
   const h = g.createIncident({ template: 'HK_MUDDY_FLOOR', houseNumber: 501 });
-  assert.equal(h.locationId, 'H501'); assert.match(h.title, /\(501\)/); assert.match(h.description, /bungalow 501/);
+  assert.equal(h.locationId, 'H501'); assert.match(h.title, /\(501\)/); assert.match(h.description, /villa 501/);
   assert.throws(() => g.createIncident({ template: 'NOPE' }), (e: any) => e.status === 422);
   // completion effect on the location (via the regular API)
   const p = g.db.prepare("SELECT * FROM players WHERE display_name = 'Sanne'").get() as any;
   const before = g.locations().find((l: any) => l.id === 'F-J') as any;
   g.claim(t.id, p, 'k-claim-1'); g.complete(t.id, p, 'k-done-1');
   const after = g.locations().find((l: any) => l.id === 'F-J') as any;
-  assert.ok(after.condition.mood > before.condition.mood, 'pool mood went up');
+  assert.ok(after.condition.mood > before.condition.mood || after.condition.clean > before.condition.clean, 'the location got better');
   assert.ok(g.parkSummary().health.overall > 0);
   // flood protection: the scheduler never pushes the number of open normal tasks over maxOpen
   g.setSchedulerConfig({ normalPerHourDay: 20, nightFactor: 1, maxOpen: 6 });
@@ -109,9 +109,9 @@ test('game: a crisis is a process: reports follow each other over time, the stat
   const g = new Game(cfg());
   g.setSchedulerConfig({ enabled: false });
   g.setStoryConfig({ enabled: false });
-  const c = g.createCrisis({ code: 'CRISIS_POOL_CLOSED' });
+  const c = g.createCrisis({ code: 'CRISIS_SLOEPEN_DRIFT' });
   assert.equal(c.state, 'active'); assert.equal(c.tasks.length, 1, 'starts with one report, not all at once');
-  assert.throws(() => g.createCrisis({ code: 'CRISIS_POOL_CLOSED' }), (e: any) => e.status === 409, 'not twice at the same time');
+  assert.throws(() => g.createCrisis({ code: 'CRISIS_SLOEPEN_DRIFT' }), (e: any) => e.status === 409, 'not twice at the same time');
   const st0 = g.crisisStatus()[0];
   assert.equal(st0.total, 5); assert.equal(st0.stages, 5); assert.ok(st0.nextAt! > st0.startedAt);
   const players = g.db.prepare('SELECT * FROM players WHERE is_test = 1').all() as any[];

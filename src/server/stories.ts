@@ -74,8 +74,8 @@ export class StoryDirector {
     if (tpl.celebrities?.length) {
       if (!cel || !(tpl.celebrities.includes(cel) || (tpl.celebrities.includes('*') && !STORIES.some((x) => x !== tpl && x.celebrities?.includes(cel))))) return null;
     } else if (cel && tpl.noRealPeople) return null;
-    if (tpl.familiesOnly && cel) return null;
-    return { lead: lead.name, role: ROLE_NAMES[lead.role], household: b.household, omroep: b.profile.omroep, show: b.profile.show, n: houseLabel(b.houseNumber), loc: `bungalow ${houseLabel(b.houseNumber)}`, fame: FAME_NAMES[b.profile.fame] };
+    if (tpl.kinds && !tpl.kinds.includes(b.profile.kind)) return null;
+    return { lead: lead.name, role: ROLE_NAMES[lead.role], household: b.household, label: b.profile.label, project: b.profile.project, n: houseLabel(b.houseNumber), loc: `villa ${houseLabel(b.houseNumber)}`, fame: FAME_NAMES[b.profile.fame] };
   }
 
   /** Start a storyline (random fitting one when no code/booking is given). Throws a message when impossible. */
@@ -160,7 +160,7 @@ export class StoryDirector {
     const ch = tpl && r.chapter >= 0 ? tpl.chapters[r.chapter] : undefined;
     return {
       id: r.id, code: r.code, title: tpl?.title ?? r.code, bookingId: r.booking_id, houseNumber: r.house_number, household: vars.household, lead: vars.lead,
-      omroep: vars.omroep, show: vars.show, intro: tpl ? storyText(tpl.intro, vars) : '', chapter: r.chapter + 1, chapters: tpl?.chapters.length ?? 0,
+      label: vars.label, project: vars.project, intro: tpl ? storyText(tpl.intro, vars) : '', chapter: r.chapter + 1, chapters: tpl?.chapters.length ?? 0,
       chapterText: ch ? storyText(ch.text, vars) : null, taskId: r.task_id, nextAt: r.next_at, state: r.state, outcome: r.outcome,
       endText: r.state === 'active' || !tpl ? null : storyText(r.state === 'completed' ? tpl.finale : tpl.fail, vars), startedAt: r.started_at, endedAt: r.ended_at,
     };

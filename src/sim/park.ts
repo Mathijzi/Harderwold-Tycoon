@@ -92,11 +92,11 @@ export class ParkSim {
     if (type === 'vehicle.passed_gate') this.setStatus(b, b.status === 'queued_in' || b.status === 'checked_in' ? 'driving_in' : 'checked_out');
   }
 
-  /** Media household (guestlib) from its own seeded stream, so guest profiles never change the traffic randomness. */
+  /** Household (guestlib: family, songwriting camp or well-to-do guests) from its own seeded stream, so guest profiles never change the traffic randomness. */
   private makeGuests(bookingId: string) {
     let h = Math.imul(this.seed, 2654435761) >>> 0;
     for (const ch of bookingId) h = Math.imul(h ^ ch.charCodeAt(0), 16777619) >>> 0;
-    // a BN'er stays in at most one bungalow at a time
+    // a cameo guest stays in at most one villa at a time
     const taken = new Set<string>();
     for (const b of this.bookings.values()) if (b.status !== 'exited' && b.profile?.celebrity) taken.add(b.profile.celebrity);
     const { household, guests } = makeHousehold(rng(h), taken);

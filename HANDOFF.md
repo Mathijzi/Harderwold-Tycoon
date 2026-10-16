@@ -256,3 +256,12 @@ Alles hieronder komt mee en werkt na de kopie, maar is nog op Aelderholt ingeric
 - Maten gedeeld met de simulatie via `src/shared/house.ts`.
 - Moderne gevelstijl (`style: 'modern'`, `roof: 'white'`) in `complex.ts` voor het hart, de driving range en de appartementen.
 - Beeld volgens de opdrachtgever: ingezoomd op het park, kijkhoek zoals Aelderholt (zie docs).
+
+## 13. Stand na fase 3 (opdrachten en gasten, 16 oktober 2026)
+
+- **Opdrachten:** de bibliotheek is herschreven voor Harderwold: 122 opdrachten in 10 groepen (golf en water zijn nieuw), 10 crises en verhaalhoofdstukken.
+- **Gasten:** families, artiesten op schrijverskamp en vermogende gasten, allemaal verzonnen. Bekende gasten alleen via `/admin`.
+- **Verhaallijnen:** 16 stuks.
+- **Teksten:** de spelteksten spreken van "villa" in plaats van "bungalow".
+- **Projectie:** nieuwe pictogrammen voor golf, boot en muziek.
+- Details in `docs/REFERENTIES_EN_AANNAMES.md`.
