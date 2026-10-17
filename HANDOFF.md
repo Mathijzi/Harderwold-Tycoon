@@ -265,3 +265,10 @@ Alles hieronder komt mee en werkt na de kopie, maar is nog op Aelderholt ingeric
 - **Teksten:** de spelteksten spreken van "villa" in plaats van "bungalow".
 - **Projectie:** nieuwe pictogrammen voor golf, boot en muziek.
 - Details in `docs/REFERENTIES_EN_AANNAMES.md`.
+
+## 14. Stand na fase 4 (boten en golfkarren, 17 oktober 2026)
+
+- Varende sloepen, kano's en SUP's op de grachten, met vaarregels: rechts houden, afstand houden, één boot tegelijk op een kruising, aanleggen bij steigers.
+- Golfkarren met golfers op de golfbaan.
+- Vaarroutes en golfpaden komen uit de plattegrond (`tools/harderwold/graphs.py`).
+- Code: `src/web/projector/leisure.ts`. Details in `docs/REFERENTIES_EN_AANNAMES.md`.

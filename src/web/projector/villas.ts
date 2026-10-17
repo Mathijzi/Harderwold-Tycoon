@@ -118,7 +118,7 @@ export function buildVilla(h: VillaSpec) {
   });
   // timber jetty / deck from the end of the terrace out into the canal, with a canoe or SUP alongside
   if (waterAt !== undefined && waterAt < back0 - 1) {
-    const jb1 = terraceEnd, jb0 = waterAt - 4.2, ja0 = -1.9 + v.upperSide * 1.5, ja1 = ja0 + 3.8;
+    const jb1 = terraceEnd, jb0 = waterAt - 1.8, ja0 = -1.9 + v.upperSide * 1.5, ja1 = ja0 + 3.8;
     box(ja0, jb0, ja1, jb1, -0.25, 0.28, (side, ctx, w, hh) => {
       if (side === 'top') {
         ctx.fillStyle = DECK; ctx.fillRect(0, 0, w, hh);
@@ -128,7 +128,7 @@ export function buildVilla(h: VillaSpec) {
       } else { ctx.fillStyle = '#6e5440'; ctx.fillRect(0, 0, w, hh); }
     }, { key: -1e6 + 3 });
     if (v.boat) {
-      const ba = ja1 + 0.55, bc = jb0 + 1.6, len = 3.6;
+      const ba = ja1 + 0.55, bc = jb0 + 0.3, len = 3.6;
       box(ba - 0.35, bc - 0.2, ba + 0.35, bc + len, 0, 0.32, (side, ctx, w, hh) => { ctx.fillStyle = side === 'top' ? '#f2f2ee' : '#d9534a'; ctx.fillRect(0, 0, w, hh); });
     }
   }

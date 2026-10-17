@@ -41375,7 +41375,7 @@ var angleWrap = (a2) => {
   while (a2 < -Math.PI) a2 += 2 * Math.PI;
   return a2;
 };
-function catmullRom(points, step2 = 0.5, alpha = 0.5) {
+function catmullRom(points, step3 = 0.5, alpha = 0.5) {
   if (points.length < 2) return points.slice();
   const p2 = [points[0], ...points, points[points.length - 1]];
   p2[0] = sub(mul(points[0], 2), points[1]);
@@ -41387,7 +41387,7 @@ function catmullRom(points, step2 = 0.5, alpha = 0.5) {
     const t1 = t0 + Math.pow(dist(p0, p1) || 1e-6, alpha);
     const t2 = t1 + Math.pow(dist(p1, p22) || 1e-6, alpha);
     const t3 = t2 + Math.pow(dist(p22, p3) || 1e-6, alpha);
-    const n2 = Math.max(2, Math.ceil(dist(p1, p22) / step2));
+    const n2 = Math.max(2, Math.ceil(dist(p1, p22) / step3));
     for (let j2 = 0; j2 < n2; j2++) {
       const t4 = t1 + (t2 - t1) * (j2 / n2);
       const A1 = add(mul(p0, (t1 - t4) / (t1 - t0)), mul(p1, (t4 - t0) / (t1 - t0)));
@@ -41401,9 +41401,9 @@ function catmullRom(points, step2 = 0.5, alpha = 0.5) {
   out2.push(points[points.length - 1]);
   return out2;
 }
-function cubicBezier(p0, p1, p2, p3, step2 = 0.4) {
+function cubicBezier(p0, p1, p2, p3, step3 = 0.4) {
   const approx = dist(p0, p1) + dist(p1, p2) + dist(p2, p3);
-  const n2 = Math.max(6, Math.ceil(approx / step2));
+  const n2 = Math.max(6, Math.ceil(approx / step3));
   const out2 = [];
   for (let i2 = 0; i2 <= n2; i2++) {
     const t2 = i2 / n2, u2 = 1 - t2;
@@ -41414,12 +41414,12 @@ function cubicBezier(p0, p1, p2, p3, step2 = 0.4) {
   }
   return out2;
 }
-function resample(pts, step2 = 0.5) {
+function resample(pts, step3 = 0.5) {
   if (pts.length < 2) return pts.slice();
   const cum = [0];
   for (let i2 = 1; i2 < pts.length; i2++) cum.push(cum[i2 - 1] + dist(pts[i2 - 1], pts[i2]));
   const total = cum[cum.length - 1];
-  const n2 = Math.max(1, Math.round(total / step2));
+  const n2 = Math.max(1, Math.round(total / step3));
   const out2 = [];
   let j2 = 0;
   for (let i2 = 0; i2 <= n2; i2++) {
@@ -41561,8 +41561,8 @@ var Polyline = class _Polyline {
     return { s: this.cum[bi] + bt * L, d: dist(p2, q), lateral: dot(sub(p2, q), rightOf(norm(ab))) };
   }
 };
-function offsetPolyline(pl, offset, step2 = 0.5) {
-  const n2 = Math.max(2, Math.ceil(pl.length / step2));
+function offsetPolyline(pl, offset, step3 = 0.5) {
+  const n2 = Math.max(2, Math.ceil(pl.length / step3));
   const out2 = [];
   for (let i2 = 0; i2 <= n2; i2++) {
     const s2 = pl.length * i2 / n2;
@@ -41808,8 +41808,8 @@ function buildNetwork(net2, sector2) {
         const ang = Math.abs(Math.atan2(cross(a2, b2), a2.x * b2.x + a2.y * b2.y));
         return ang / 6;
       };
-      const step2 = 1, n2 = Math.max(1, Math.ceil(core.length / step2));
-      const kap = Array.from({ length: n2 + 1 }, (_, i2) => bendAt(i2 * step2));
+      const step3 = 1, n2 = Math.max(1, Math.ceil(core.length / step3));
+      const kap = Array.from({ length: n2 + 1 }, (_, i2) => bendAt(i2 * step3));
       const wid = kap.map((_, i2) => {
         let m2 = 0, c2 = 0;
         for (let j2 = Math.max(0, i2 - 10); j2 <= Math.min(n2, i2 + 10); j2++) {
@@ -41819,7 +41819,7 @@ function buildNetwork(net2, sector2) {
         return Math.min(0.6, 4 * m2 / c2);
       });
       const extra = (s2) => {
-        const i2 = clamp(s2 / step2, 0, n2);
+        const i2 = clamp(s2 / step3, 0, n2);
         const i0 = Math.floor(i2), i1 = Math.min(n2, i0 + 1);
         return wid[i0] + (wid[i1] - wid[i0]) * (i2 - i0);
       };
@@ -42472,8 +42472,8 @@ function buildNetwork(net2, sector2) {
         px += -houses[i2].front.y * sgn * m2;
         py += houses[i2].front.x * sgn * m2;
       }
-      const l2 = Math.hypot(px, py) || 1, step2 = Math.max(0.15, Math.min(0.5, l2));
-      houses[i2].pos = add(houses[i2].pos, { x: px / l2 * step2, y: py / l2 * step2 });
+      const l2 = Math.hypot(px, py) || 1, step3 = Math.max(0.15, Math.min(0.5, l2));
+      houses[i2].pos = add(houses[i2].pos, { x: px / l2 * step3, y: py / l2 * step3 });
     }
   }
   const clear = (i2) => {
@@ -43302,7 +43302,7 @@ function buildVilla(h2) {
     for (let i2 = 0; i2 < 18; i2++) ctx2.fillRect(rnd() * w2, rnd() * hh, 0.25, 0.18);
   });
   if (waterAt !== void 0 && waterAt < back0 - 1) {
-    const jb1 = terraceEnd, jb0 = waterAt - 4.2, ja0 = -1.9 + v2.upperSide * 1.5, ja1 = ja0 + 3.8;
+    const jb1 = terraceEnd, jb0 = waterAt - 1.8, ja0 = -1.9 + v2.upperSide * 1.5, ja1 = ja0 + 3.8;
     box(ja0, jb0, ja1, jb1, -0.25, 0.28, (side, ctx2, w2, hh) => {
       if (side === "top") {
         ctx2.fillStyle = DECK;
@@ -43324,7 +43324,7 @@ function buildVilla(h2) {
       }
     }, { key: -1e6 + 3 });
     if (v2.boat) {
-      const ba = ja1 + 0.55, bc = jb0 + 1.6, len = 3.6;
+      const ba = ja1 + 0.55, bc = jb0 + 0.3, len = 3.6;
       box(ba - 0.35, bc - 0.2, ba + 0.35, bc + len, 0, 0.32, (side, ctx2, w2, hh) => {
         ctx2.fillStyle = side === "top" ? "#f2f2ee" : "#d9534a";
         ctx2.fillRect(0, 0, w2, hh);
@@ -43651,7 +43651,8 @@ function drawVehicle(ctx2, d2, t2) {
     addBox(Lh - 0.55, Lh - 0.05, Wh * 0.9, Wh * 0.85, 0.72, 0.98, "#e9eceb");
     addBox(-0.35, 0.25, Wh * 0.9, Wh * 0.9, 0.72, 1, "#2b2f33");
     addBox(-0.45, -0.3, Wh * 0.9, Wh * 0.9, 1, 1.42, "#2b2f33");
-    addBox(-Lh + 0.08, -0.55, Wh * 0.82, Wh * 0.82, 0.72, 1.18, "#f08a24");
+    if (d2.kind === "service") addBox(-Lh + 0.08, -0.55, Wh * 0.82, Wh * 0.82, 0.72, 1.18, "#f08a24");
+    else addBox(-Lh + 0.12, -0.75, Wh * 0.72, Wh * 0.62, 0.72, 1.55, "#1f2a38", { f: 0.05, b: 0.05, s: 0.06 });
   } else if (isVan) {
     addBox(-Lh, Lh - 1.05, Wh, Wh, 0.35, 2.3, "#f4f6f5");
     addBox(Lh - 1.05, Lh, Wh, Wh * 0.97, 0.35, 1.15, "#f4f6f5");
@@ -43703,13 +43704,15 @@ function drawVehicle(ctx2, d2, t2) {
     }
     const roof = [L(Lh - 0.35, -Wh * 1.02, 1.95), L(Lh - 0.35, Wh * 1.02, 1.95), L(-0.75, Wh * 1.02, 1.95), L(-0.75, -Wh * 1.02, 1.95)].map(Pv);
     poly(ctx2, roof);
-    ctx2.fillStyle = shadeHex(BRAND.teal, 1.05);
+    ctx2.fillStyle = d2.kind === "service" ? shadeHex(BRAND.teal, 1.05) : d2.color;
     ctx2.fill();
     ctx2.strokeStyle = "rgba(0,0,0,0.35)";
     ctx2.lineWidth = 0.8 * cam.RS;
     ctx2.stroke();
-    const e2 = Pv(L(Lh * 0.15 - 0.3, 0, 1.97));
-    emblem(ctx2, e2.x, e2.y, 0.32 * cam.S, "#ffffff");
+    if (d2.kind === "service") {
+      const e2 = Pv(L(Lh * 0.15 - 0.3, 0, 1.97));
+      emblem(ctx2, e2.x, e2.y, 0.32 * cam.S, "#ffffff");
+    }
   }
   if (isVan || isCart) {
     for (const side of [1, -1]) {
@@ -43916,8 +43919,8 @@ function drawPedestrian(ctx2, p2, t2, seed) {
   ctx2.arc(hd.x + hr * 0.45 * facing2, hd.y - hr * 0.05, Math.max(0.25, hr * 0.12), 0, Math.PI * 2);
   ctx2.fill();
 }
-function drawBarrier(ctx2, pivot, dir, laneDir, len, frac2, phase) {
-  const ang = frac2 * (Math.PI / 2) * 0.94;
+function drawBarrier(ctx2, pivot, dir, laneDir, len, frac3, phase) {
+  const ang = frac3 * (Math.PI / 2) * 0.94;
   const pz = 1;
   const hx = laneDir.x * 0.27, hy = laneDir.y * 0.27, wx = dir.x * 0.27, wy = dir.y * 0.27;
   const base = [{ x: pivot.x - hx - wx, y: pivot.y - hy - wy }, { x: pivot.x + hx - wx, y: pivot.y + hy - wy }, { x: pivot.x + hx + wx, y: pivot.y + hy + wy }, { x: pivot.x - hx + wx, y: pivot.y - hy + wy }];
@@ -46557,6 +46560,428 @@ function drawDog(ctx2, x2, y2, h2, walking, t2, seed, owner) {
   ctx2.restore();
 }
 
+// src/web/projector/leisure.ts
+var BOAT_COLORS = ["#f4f4f0", "#1f2a38", "#f4f4f0", "#2f5f7a", "#f4f4f0", "#5a4a3a"];
+var KANO_COLORS = ["#d9442e", "#f2b41b", "#2e8b57", "#2f78b8"];
+var CLOTHES2 = ["#d9534f", "#3a6ea5", "#f0ad4e", "#5cb85c", "#f7f7f2", "#7b5ea7", "#e88aa8", "#46a5a0", "#c9a227", "#2f6f8f"];
+var HEAD = 64;
+var BOAT = 1.5;
+function setLeisureScale(zoom) {
+  BOAT = zoom >= 2 ? 1 : 1.5;
+}
+var frac2 = (x2) => x2 - Math.floor(x2);
+var step2 = (h2, n2) => (Math.round(h2 / (2 * Math.PI) * n2) % n2 + n2) % n2;
+function buildGraph(g2, toWorld, k2) {
+  if (!g2 || !g2.edges.length) return null;
+  const nodes = g2.nodes.map(toWorld);
+  const edges = [];
+  for (const e2 of g2.edges) {
+    const pts = e2.pts.map(toWorld);
+    if (pts.length < 2) continue;
+    const cum = [0];
+    for (let i2 = 1; i2 < pts.length; i2++) cum.push(cum[i2 - 1] + Math.hypot(pts[i2].x - pts[i2 - 1].x, pts[i2].y - pts[i2 - 1].y));
+    if (cum[cum.length - 1] < 4) continue;
+    edges.push({ a: e2.a, b: e2.b, pts, cum, len: cum[cum.length - 1], half: e2.w.map((w2) => w2 * k2) });
+  }
+  const adj = nodes.map(() => []);
+  edges.forEach((e2, i2) => {
+    adj[e2.a].push(i2);
+    if (e2.b !== e2.a) adj[e2.b].push(i2);
+  });
+  const comp = new Array(edges.length).fill(-1), tot = [];
+  edges.forEach((_, i0) => {
+    if (comp[i0] >= 0) return;
+    const c2 = tot.length;
+    tot.push(0);
+    const st = [i0];
+    comp[i0] = c2;
+    while (st.length) {
+      const i2 = st.pop();
+      tot[c2] += edges[i2].len;
+      for (const n2 of [edges[i2].a, edges[i2].b]) for (const j2 of adj[n2]) if (comp[j2] < 0) {
+        comp[j2] = c2;
+        st.push(j2);
+      }
+    }
+  });
+  return { nodes, edges, adj, reach: comp.map((c2) => tot[c2]) };
+}
+function sample(e2, s2) {
+  s2 = Math.max(0, Math.min(e2.len, s2));
+  let i2 = 1;
+  while (i2 < e2.cum.length - 1 && e2.cum[i2] < s2) i2++;
+  const a2 = e2.pts[i2 - 1], b2 = e2.pts[i2], t2 = (s2 - e2.cum[i2 - 1]) / Math.max(1e-6, e2.cum[i2] - e2.cum[i2 - 1]);
+  const half = e2.half[i2 - 1] + (e2.half[Math.min(e2.half.length - 1, i2)] - e2.half[i2 - 1]) * t2;
+  return { x: a2.x + (b2.x - a2.x) * t2, y: a2.y + (b2.y - a2.y) * t2, h: Math.atan2(b2.y - a2.y, b2.x - a2.x), half };
+}
+var Leisure = class {
+  water;
+  golf;
+  boats = [];
+  carts = [];
+  /** junction mutex: node -> mover id */
+  busy = /* @__PURE__ */ new Map();
+  rand;
+  last = 0;
+  constructor(inp, seed = 23) {
+    this.rand = rng(seed);
+    const r2 = this.rand;
+    this.water = buildGraph(inp.canals, inp.toWorld, inp.metersPerPt);
+    this.golf = buildGraph(inp.golfPaths, inp.toWorld, inp.metersPerPt);
+    let id = 0;
+    const place = (g2, kind, n2, list) => {
+      const long = g2.edges.map((e2, i2) => ({ e: e2, i: i2 })).filter((x2) => x2.e.len > 14 && g2.reach[x2.i] > (kind === "kar" ? 250 : 150));
+      for (let k2 = 0; k2 < n2 && long.length; k2++) {
+        const { e: e2, i: i2 } = long[r2.int(0, long.length - 1)];
+        const spec = kind === "sloep" ? { vmax: 1.65, len: 5.6, beam: 2.1 } : kind === "kano" ? { vmax: 1, len: 4.4, beam: 0.8 } : kind === "sup" ? { vmax: 0.7, len: 3.2, beam: 0.8 } : { vmax: 3.6, len: 2.6, beam: 1.3 };
+        const s2 = r2.range(5, e2.len - 5);
+        if (list.some((m2) => m2.e === i2 && Math.abs(m2.s - s2) < 12)) continue;
+        const crewN = kind === "sloep" ? r2.int(2, 5) : kind === "kano" ? r2.int(1, 2) : kind === "sup" ? 1 : 2;
+        list.push({
+          kind,
+          id: id++,
+          e: i2,
+          dir: r2.next() < 0.5 ? 1 : -1,
+          s: s2,
+          v: 0,
+          ...spec,
+          pause: r2.range(0, 8),
+          holds: -1,
+          color: kind === "sloep" ? r2.pick(BOAT_COLORS) : kind === "kar" ? r2.pick(["#f2f4f3", "#e9ecea", "#1f2a38"]) : r2.pick(KANO_COLORS),
+          crew: Array.from({ length: crewN }, () => r2.pick(CLOTHES2)),
+          x: 0,
+          y: 0,
+          h: 0,
+          parked: false
+        });
+      }
+    };
+    if (this.water) {
+      place(this.water, "sloep", 11, this.boats);
+      place(this.water, "kano", 6, this.boats);
+      place(this.water, "sup", 3, this.boats);
+    }
+    if (this.golf) place(this.golf, "kar", 9, this.carts);
+    for (const m2 of [...this.boats, ...this.carts]) this.pose(m2);
+  }
+  get counts() {
+    return { boats: this.boats.length, carts: this.carts.length };
+  }
+  graphOf(m2) {
+    return m2.kind === "kar" ? this.golf : this.water;
+  }
+  /** world pose: on the centre line, shifted to the right of the direction of travel ("keep right") */
+  pose(m2) {
+    const g2 = this.graphOf(m2), e2 = g2.edges[m2.e];
+    const q = sample(e2, m2.s);
+    const h2 = m2.dir === 1 ? q.h : q.h + Math.PI;
+    const room = Math.max(0, q.half - m2.beam / 2 - 0.6);
+    const off = m2.kind === "kar" ? 0 : Math.min(room, Math.max(0, q.half - 2.6 - m2.beam / 2), m2.kind === "sloep" ? Math.max(1.2, q.half * 0.3) : q.half * 0.4);
+    m2.x = q.x - Math.sin(h2) * off;
+    m2.y = q.y + Math.cos(h2) * off;
+    m2.h = h2;
+  }
+  endNode(m2) {
+    const e2 = this.graphOf(m2).edges[m2.e];
+    return m2.dir === 1 ? e2.b : e2.a;
+  }
+  toEnd(m2) {
+    const e2 = this.graphOf(m2).edges[m2.e];
+    return m2.dir === 1 ? e2.len - m2.s : m2.s;
+  }
+  step(now) {
+    const dt = Math.min(0.1, Math.max(0, now - this.last));
+    this.last = now;
+    if (!dt) return;
+    for (const list of [this.boats, this.carts]) for (const m2 of list) this.move(m2, list, dt);
+  }
+  move(m2, list, dt) {
+    const g2 = this.graphOf(m2), r2 = this.rand;
+    const tag = (n2) => `${m2.kind === "kar" ? "g" : "w"}${n2}`;
+    if (m2.pause > 0) {
+      m2.pause -= dt;
+      m2.v = 0;
+      m2.parked = m2.pause > 2;
+      if (m2.pause <= 0) m2.parked = false;
+      return;
+    }
+    let want = m2.vmax;
+    for (const o2 of list) {
+      if (o2 === m2) continue;
+      if (o2.e === m2.e && o2.dir === m2.dir) {
+        const gap = (o2.s - m2.s) * m2.dir - (o2.len + m2.len) / 2;
+        if (gap > -0.5 && gap < 14) want = Math.min(want, gap < 7 ? 0 : o2.v * 0.9 + (gap - 7) * 0.15);
+      }
+    }
+    const end = this.endNode(m2), dEnd = this.toEnd(m2);
+    const holder = this.busy.get(tag(end));
+    if (dEnd < 12 && g2.adj[end].length >= 3) {
+      if (holder === void 0) {
+        this.busy.set(tag(end), m2.id);
+        m2.holds = end;
+      } else if (holder !== m2.id) want = Math.min(want, dEnd < 8 ? 0 : 0.3);
+    }
+    if (dEnd < 6) want = Math.min(want, m2.vmax * 0.6);
+    const acc = m2.kind === "kar" ? 1.6 : 0.35;
+    m2.v = want > m2.v ? Math.min(want, m2.v + acc * dt) : Math.max(want, m2.v - acc * 2 * dt);
+    m2.s += m2.dir * m2.v * dt;
+    const e2 = g2.edges[m2.e];
+    if (m2.dir === 1 && m2.s >= e2.len || m2.dir === -1 && m2.s <= 0) {
+      const opts = g2.adj[end].filter((i2) => i2 !== m2.e);
+      if (!opts.length) {
+        m2.dir = m2.dir === 1 ? -1 : 1;
+        m2.s = Math.max(0, Math.min(e2.len, m2.s));
+        m2.pause = m2.kind === "kar" ? r2.range(25, 55) : r2.range(18, 60);
+      } else {
+        const ni = opts[r2.int(0, opts.length - 1)], ne = g2.edges[ni];
+        m2.e = ni;
+        m2.dir = ne.a === end ? 1 : -1;
+        m2.s = m2.dir === 1 ? 0 : ne.len;
+      }
+    }
+    if (m2.holds >= 0 && m2.holds !== this.endNode(m2)) {
+      const ee = g2.edges[m2.e], from = m2.dir === 1 ? ee.a : ee.b;
+      if (from !== m2.holds || (m2.dir === 1 ? m2.s : ee.len - m2.s) > 8) {
+        if (this.busy.get(tag(m2.holds)) === m2.id) this.busy.delete(tag(m2.holds));
+        m2.holds = -1;
+      }
+    }
+    if (r2.next() < dt * (m2.kind === "kar" ? 6e-3 : 4e-3)) m2.pause = m2.kind === "kar" ? r2.range(20, 40) : r2.range(15, 45);
+    this.pose(m2);
+  }
+  objects(now, night2) {
+    const out2 = [];
+    const boats = night2 ? this.boats.filter((b2) => b2.kind === "sloep" && b2.id % 4 === 0) : this.boats;
+    for (const b2 of boats) {
+      const hb = step2(b2.h, HEAD), wake = b2.v > 0.15 ? Math.floor(frac2(now * 0.8 + b2.id * 0.31) * 4) : -1;
+      const pad = b2.kind === "kano" && b2.v > 0.15 ? Math.floor(frac2(now * 0.9 + b2.id * 0.17) * 4) : 0;
+      const q = { ...b2, h: hb / HEAD * 2 * Math.PI };
+      out2.push({
+        key: b2.y * cam.CE - 0.3,
+        id: `lz:b${b2.id}`,
+        at: { x: b2.x, y: b2.y },
+        box: [(b2.len / 2 + 2.5) * BOAT, 2.4 * BOAT],
+        cacheKey: `boat|${BOAT}|${b2.kind}|${b2.color}|${b2.crew.join(",")}|${hb}|${wake}|${pad}`,
+        draw: (c2) => drawBoat(c2, q, wake, pad)
+      });
+    }
+    if (!night2) for (const k2 of this.carts) {
+      const hb = step2(k2.h, 128);
+      const hq = hb / 128 * 2 * Math.PI;
+      out2.push({
+        key: k2.y * cam.CE,
+        id: `lz:c${k2.id}`,
+        at: { x: k2.x, y: k2.y },
+        box: [(k2.len / 2 + 1) * BOAT, 3 * BOAT],
+        cacheKey: `gcart|${BOAT}|${k2.color}|${hb}`,
+        draw: (c2) => scaled(c2, k2.x, k2.y, () => drawVehicle(c2, { id: `gc${k2.id}`, kind: "visitor", model: "golfcart", color: k2.color, x: k2.x, y: k2.y, h: hq, v: 0, brake: false, signal: 0, reverse: false, len: k2.len, wid: k2.beam, state: "driving" }, 0))
+      });
+      if (k2.parked) {
+        const sx = -Math.sin(k2.h), sy = Math.cos(k2.h);
+        k2.crew.forEach((col, i2) => {
+          const px = k2.x + sx * (2 + i2 * 1.1) + Math.cos(k2.h) * (i2 ? 0.8 : -0.4), py = k2.y + sy * (2 + i2 * 1.1) + Math.sin(k2.h) * (i2 ? 0.8 : -0.4);
+          const facing2 = i2 ? Math.PI : 0, seed = k2.id * 13 + i2;
+          out2.push({
+            key: py * cam.CE,
+            id: `lz:g${k2.id}:${i2}`,
+            at: { x: px, y: py },
+            box: [1.4, 3.2],
+            cacheKey: `golfer|${BOAT}|${col}|${seed % 15}|${i2}`,
+            draw: (c2) => scaled(c2, px, py, () => drawGolfer(c2, px, py, facing2, col, seed, i2 === 0))
+          });
+        });
+      }
+    }
+    return out2;
+  }
+};
+function drawBoat(ctx2, b2, wake, pad) {
+  const g0 = P(b2.x, b2.y);
+  ctx2.save();
+  ctx2.translate(g0.x, g0.y);
+  ctx2.scale(BOAT, BOAT);
+  ctx2.translate(-g0.x, -g0.y);
+  try {
+    drawBoatBody(ctx2, b2, wake, pad);
+  } finally {
+    ctx2.restore();
+  }
+}
+function drawBoatBody(ctx2, b2, wake, pad) {
+  const s2 = cam.S;
+  const fx2 = Math.cos(b2.h), fy = Math.sin(b2.h), rx = -fy, ry = fx2;
+  const L = (a2, w2, z) => ({ x: b2.x + fx2 * a2 + rx * w2, y: b2.y + fy * a2 + ry * w2, z });
+  const poly2 = (pts) => {
+    ctx2.beginPath();
+    pts.forEach((p2, i2) => {
+      const q = Pv(p2);
+      i2 ? ctx2.lineTo(q.x, q.y) : ctx2.moveTo(q.x, q.y);
+    });
+    ctx2.closePath();
+  };
+  const Lh = b2.len / 2, Wh = b2.beam / 2;
+  if (wake >= 0) {
+    const ph = (wake + 0.5) / 4;
+    ctx2.lineWidth = Math.max(0.8, 0.12 * s2);
+    ctx2.lineCap = "round";
+    for (const k2 of [0, 0.5]) {
+      const t2 = frac2(ph + k2), back = Lh + t2 * 6, spread = Wh + t2 * 2.2;
+      ctx2.strokeStyle = `rgba(235,248,250,${(0.55 * (1 - t2)).toFixed(3)})`;
+      for (const side of [1, -1]) {
+        const a2 = Pv(L(-Lh + 0.3, side * Wh * 0.8, 0)), c2 = Pv(L(-back, side * spread, 0));
+        ctx2.beginPath();
+        ctx2.moveTo(a2.x, a2.y);
+        ctx2.lineTo(c2.x, c2.y);
+        ctx2.stroke();
+      }
+    }
+  }
+  const hull2 = (z, k2 = 1) => {
+    const pts = [];
+    for (let i2 = 0; i2 <= 10; i2++) {
+      const t2 = i2 / 10;
+      const a2 = Lh - t2 * b2.len;
+      const w2 = (t2 < 0.35 ? Math.sin(t2 / 0.35 * Math.PI / 2) : t2 > 0.9 ? 0.85 + 0.15 * Math.cos((t2 - 0.9) / 0.1 * Math.PI / 2) : 1) * Wh * k2;
+      pts.push(L(a2, w2, z));
+    }
+    for (let i2 = 10; i2 >= 0; i2--) {
+      const p2 = pts[i2];
+      const a2 = (p2.x - b2.x) * fx2 + (p2.y - b2.y) * fy;
+      const w2 = (p2.x - b2.x) * rx + (p2.y - b2.y) * ry;
+      pts.push(L(a2, -w2, z));
+    }
+    return pts;
+  };
+  ctx2.fillStyle = "rgba(10,40,50,0.32)";
+  poly2(hull2(-0.05, 1.08));
+  ctx2.fill();
+  if (b2.kind === "sup") {
+    ctx2.fillStyle = b2.color;
+    poly2(hull2(0.1, 0.9));
+    ctx2.fill();
+    ctx2.strokeStyle = "rgba(0,0,0,0.25)";
+    ctx2.lineWidth = Math.max(0.6, 0.04 * s2);
+    ctx2.stroke();
+    const g2 = P(b2.x, b2.y);
+    ctx2.save();
+    ctx2.translate(0, -0.1 * s2);
+    drawPedestrian(ctx2, { id: "", x: b2.x, y: b2.y, h: b2.h, walking: false, color: b2.crew[0] }, 0, b2.id);
+    ctx2.restore();
+    const p0 = Pv(L(0.3, Wh + 0.3, 1.5)), p1 = Pv(L(0.6, Wh + 0.45, -0.1));
+    ctx2.strokeStyle = "#2b2b2b";
+    ctx2.lineWidth = Math.max(0.8, 0.05 * s2);
+    ctx2.beginPath();
+    ctx2.moveTo(p0.x, p0.y);
+    ctx2.lineTo(p1.x, p1.y);
+    ctx2.stroke();
+    void g2;
+    return;
+  }
+  const zTop = b2.kind === "sloep" ? 0.62 : 0.32;
+  ctx2.fillStyle = b2.kind === "sloep" ? b2.color === "#f4f4f0" ? "#d8d8d2" : b2.color : b2.color;
+  poly2(hull2(0));
+  ctx2.fill();
+  const top = hull2(zTop);
+  ctx2.fillStyle = b2.kind === "sloep" ? b2.color === "#1f2a38" ? "#24324a" : "#f6f6f2" : b2.color;
+  poly2(top);
+  ctx2.fill();
+  ctx2.strokeStyle = "rgba(0,0,0,0.3)";
+  ctx2.lineWidth = Math.max(0.6, 0.04 * s2);
+  ctx2.stroke();
+  if (b2.kind === "sloep") {
+    ctx2.fillStyle = "#b48d63";
+    poly2(hull2(zTop + 0.01, 0.78));
+    ctx2.fill();
+    ctx2.strokeStyle = "rgba(90,60,35,0.45)";
+    ctx2.lineWidth = Math.max(0.5, 0.025 * s2);
+    for (let a2 = -Lh + 0.6; a2 < Lh - 1.2; a2 += 0.35) {
+      const p2 = Pv(L(a2, -Wh * 0.7, zTop + 0.02)), q = Pv(L(a2, Wh * 0.7, zTop + 0.02));
+      ctx2.beginPath();
+      ctx2.moveTo(p2.x, p2.y);
+      ctx2.lineTo(q.x, q.y);
+      ctx2.stroke();
+    }
+    ctx2.fillStyle = "#e9e4da";
+    poly2([L(-Lh + 0.5, -Wh * 0.72, zTop + 0.4), L(-Lh + 1.5, -Wh * 0.72, zTop + 0.4), L(-Lh + 1.5, Wh * 0.72, zTop + 0.4), L(-Lh + 0.5, Wh * 0.72, zTop + 0.4)]);
+    ctx2.fill();
+    b2.crew.forEach((col, i2) => {
+      const a2 = -Lh + 1 + i2 % 2 * 0.1 + Math.floor(i2 / 2) * 1.4, w2 = (i2 % 2 ? 1 : -1) * Wh * 0.42;
+      const body = Pv(L(a2, w2, zTop + 0.75)), head = Pv(L(a2, w2, zTop + 1.15));
+      ctx2.fillStyle = col;
+      ctx2.beginPath();
+      ctx2.ellipse(body.x, body.y, 0.24 * s2, 0.3 * s2, 0, 0, Math.PI * 2);
+      ctx2.fill();
+      ctx2.fillStyle = ["#e7c3a0", "#d7a97f", "#b07a52", "#8a5a3a", "#f0d0b0"][(b2.id + i2) % 5];
+      ctx2.beginPath();
+      ctx2.arc(head.x, head.y, 0.14 * s2, 0, Math.PI * 2);
+      ctx2.fill();
+    });
+    const ob = Pv(L(-Lh - 0.15, 0, zTop + 0.2));
+    ctx2.fillStyle = "#2b2f33";
+    ctx2.fillRect(ob.x - 0.12 * s2, ob.y - 0.25 * s2, 0.24 * s2, 0.35 * s2);
+  } else {
+    ctx2.fillStyle = "rgba(30,30,30,0.55)";
+    const seats = b2.crew.length === 2 ? [0.9, -0.9] : [0];
+    seats.forEach((a2, i2) => {
+      poly2([L(a2 + 0.45, -Wh * 0.5, zTop + 0.01), L(a2 + 0.45, Wh * 0.5, zTop + 0.01), L(a2 - 0.45, Wh * 0.5, zTop + 0.01), L(a2 - 0.45, -Wh * 0.5, zTop + 0.01)]);
+      ctx2.fill();
+      const body = Pv(L(a2, 0, zTop + 0.45)), head = Pv(L(a2, 0, zTop + 0.85));
+      ctx2.fillStyle = b2.crew[i2];
+      ctx2.beginPath();
+      ctx2.ellipse(body.x, body.y, 0.2 * s2, 0.26 * s2, 0, 0, Math.PI * 2);
+      ctx2.fill();
+      ctx2.fillStyle = "#e7c3a0";
+      ctx2.beginPath();
+      ctx2.arc(head.x, head.y, 0.13 * s2, 0, Math.PI * 2);
+      ctx2.fill();
+      const tilt = Math.sin((pad + 0.5) / 4 * 2 * Math.PI) * 0.5;
+      const p0 = Pv(L(a2 + 0.2, -1.1, zTop + 0.55 + tilt)), p1 = Pv(L(a2 + 0.2, 1.1, zTop + 0.55 - tilt));
+      ctx2.strokeStyle = "#2b2b2b";
+      ctx2.lineWidth = Math.max(0.8, 0.05 * s2);
+      ctx2.beginPath();
+      ctx2.moveTo(p0.x, p0.y);
+      ctx2.lineTo(p1.x, p1.y);
+      ctx2.stroke();
+      ctx2.fillStyle = "#f2b41b";
+      for (const p2 of [p0, p1]) {
+        ctx2.beginPath();
+        ctx2.ellipse(p2.x, p2.y, 0.14 * s2, 0.07 * s2, 0, 0, Math.PI * 2);
+        ctx2.fill();
+      }
+      ctx2.fillStyle = "#f2b41b";
+    });
+  }
+}
+function scaled(ctx2, x2, y2, f2) {
+  const g2 = P(x2, y2);
+  ctx2.save();
+  ctx2.translate(g2.x, g2.y);
+  ctx2.scale(BOAT, BOAT);
+  ctx2.translate(-g2.x, -g2.y);
+  try {
+    f2();
+  } finally {
+    ctx2.restore();
+  }
+}
+function drawGolfer(ctx2, x2, y2, h2, color, seed, club) {
+  const s2 = cam.S;
+  drawPedestrian(ctx2, { id: "", x: x2, y: y2, h: h2, walking: false, color }, 0, seed);
+  if (club) {
+    const hand = Pv({ x: x2, y: y2, z: 1 }), tip = Pv({ x: x2 + (Math.cos(h2) >= 0 ? 0.9 : -0.9), y: y2, z: 0.05 });
+    ctx2.strokeStyle = "#3a3a3a";
+    ctx2.lineWidth = Math.max(0.8, 0.04 * s2);
+    ctx2.beginPath();
+    ctx2.moveTo(hand.x, hand.y);
+    ctx2.lineTo(tip.x, tip.y);
+    ctx2.stroke();
+    ctx2.fillStyle = "#ffffff";
+    ctx2.beginPath();
+    ctx2.arc(tip.x + 0.2 * s2, tip.y, 0.06 * s2, 0, Math.PI * 2);
+    ctx2.fill();
+  }
+}
+
 // src/web/projector/daynight.ts
 function darkness(hour) {
   const s2 = (a2, b2, h2) => {
@@ -48886,11 +49311,11 @@ function drawPopups(ctx2, list, now, map) {
     ctx2.font = `400 ${Math.round(25 * k2)}px system-ui, "Segoe UI", Arial`;
     ctx2.fillStyle = "rgba(255,255,255,0.92)";
     lines.forEach((ln, i2) => ctx2.fillText(ln, r2.x + pad, r2.y + pad + 40 * k2 + 32 * k2 + 38 * k2 + i2 * 32 * k2));
-    const frac2 = Math.max(0, left_ / p2.dur);
+    const frac3 = Math.max(0, left_ / p2.dur);
     ctx2.fillStyle = "rgba(255,255,255,0.15)";
     ctx2.fillRect(r2.x + 18 * k2, r2.y + h2 - 10 * k2, W - 36 * k2, 4 * k2);
     ctx2.fillStyle = col;
-    ctx2.fillRect(r2.x + 18 * k2, r2.y + h2 - 10 * k2, (W - 36 * k2) * frac2, 4 * k2);
+    ctx2.fillRect(r2.x + 18 * k2, r2.y + h2 - 10 * k2, (W - 36 * k2) * frac3, 4 * k2);
     ctx2.restore();
   }
 }
@@ -49130,6 +49555,7 @@ function maskOf(c2) {
 var lastFrameT = 0;
 var statics = [];
 var ambient = null;
+var leisure = null;
 var ZOOM = Math.max(1, Math.min(6, Number(qs2.get("zoom") ?? 1) || 1));
 var GROUND_SS = Math.max(1, Math.min(3, Number(qs2.get("groundss") ?? (ZOOM > 1 ? 1 : 2))));
 var inView = (x2, y2, m2 = 30) => {
@@ -49161,6 +49587,7 @@ async function boot() {
     cam.cx = f2.x;
     cam.cy = f2.y;
     setLifeScale(ZOOM);
+    setLeisureScale(ZOOM);
   }
   const canvas = document.getElementById("world");
   canvas.width = cam.W;
@@ -49626,7 +50053,8 @@ async function buildScene() {
       avoid: (p2) => foot.some((h2) => Math.hypot(p2.x - h2.pos.x, p2.y - h2.pos.y) < h2.rad - 3.4) || bc.some((c2) => pointInPolygon(p2, c2))
     }, 11);
   }
-  window.__scene = { ambient: ambient?.counts, blocks: blocks.map((b2) => b2.id), terrace: terraceSpots.length, trees: trees.length, baked: baked.length, live: live.length, houses: net.houses.length, statics: statics.length };
+  if (qs2.get("life") !== "0") leisure = new Leisure({ canals: sector.terrain.canals, golfPaths: sector.terrain.golfPaths, toWorld: W, metersPerPt: sector.metersPerPt }, 23);
+  window.__scene = { leisure: leisure?.counts, ambient: ambient?.counts, blocks: blocks.map((b2) => b2.id), terrace: terraceSpots.length, trees: trees.length, baked: baked.length, live: live.length, houses: net.houses.length, statics: statics.length };
 }
 var OccGrid = class {
   constructor(w2, h2, c2) {
@@ -49839,16 +50267,16 @@ var curT = 0;
 function drawGateArm(ctx2, id, _t) {
   const g2 = net.gates.get(id);
   const gs = curGates.find((x2) => x2.id === id);
-  let frac2 = 0;
+  let frac3 = 0;
   if (gs) {
     const el = curT - gs.since;
     const ease = (x2) => {
       x2 = Math.max(0, Math.min(1, x2));
       return x2 * x2 * (3 - 2 * x2);
     };
-    frac2 = gs.phase === "OPEN" ? 1 : gs.phase === "OPENING" ? ease(el / gs.openSec) : gs.phase === "CLOSING" ? 1 - ease(el / gs.closeSec) : 0;
+    frac3 = gs.phase === "OPEN" ? 1 : gs.phase === "OPENING" ? ease(el / gs.openSec) : gs.phase === "CLOSING" ? 1 - ease(el / gs.closeSec) : 0;
   }
-  drawBarrier(ctx2, g2.armPivot, g2.armDir, g2.laneDir, g2.armLen, frac2, gs?.phase ?? "CLOSED");
+  drawBarrier(ctx2, g2.armPivot, g2.armDir, g2.laneDir, g2.armLen, frac3, gs?.phase ?? "CLOSED");
 }
 var lastFrameAt = 0;
 var lastFrameCost = 0;
@@ -49918,6 +50346,12 @@ function frame2() {
     const hour = state ? Number(HOUR_FMT.format(new Date(state.park.gameMs))) : 12;
     const wk = currentWeather()?.kind;
     for (const o2 of ambient.objects(now, hour >= 23 || hour < 7 || wk === "regen" || wk === "onweer")) if (!o2.at || inView(o2.at.x, o2.at.y, 6)) objs.push(o2);
+  }
+  if (leisure) {
+    leisure.step(now);
+    const hour = state ? Number(HOUR_FMT.format(new Date(state.park.gameMs))) : 12;
+    const wk = currentWeather()?.kind;
+    for (const o2 of leisure.objects(now, hour >= 21 || hour < 7 || wk === "regen" || wk === "onweer")) if (!o2.at || inView(o2.at.x, o2.at.y, 8)) objs.push(o2);
   }
   objs.sort((a2, b2) => a2.key - b2.key);
   const movers = [];

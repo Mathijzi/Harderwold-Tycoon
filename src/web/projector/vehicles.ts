@@ -54,7 +54,8 @@ export function drawVehicle(ctx: CanvasRenderingContext2D, d: VehDraw, t: number
     addBox(Lh - 0.55, Lh - 0.05, Wh * 0.9, Wh * 0.85, 0.72, 0.98, '#e9eceb');
     addBox(-0.35, 0.25, Wh * 0.9, Wh * 0.9, 0.72, 1.0, '#2b2f33');
     addBox(-0.45, -0.3, Wh * 0.9, Wh * 0.9, 1.0, 1.42, '#2b2f33');
-    addBox(-Lh + 0.08, -0.55, Wh * 0.82, Wh * 0.82, 0.72, 1.18, '#f08a24');
+    if (d.kind === 'service') addBox(-Lh + 0.08, -0.55, Wh * 0.82, Wh * 0.82, 0.72, 1.18, '#f08a24');
+    else addBox(-Lh + 0.12, -0.75, Wh * 0.72, Wh * 0.62, 0.72, 1.55, '#1f2a38', { f: 0.05, b: 0.05, s: 0.06 }); // golf bags on the back
   } else if (isVan) {
     addBox(-Lh, Lh - 1.05, Wh, Wh, 0.35, 2.3, '#f4f6f5');
     addBox(Lh - 1.05, Lh, Wh, Wh * 0.97, 0.35, 1.15, '#f4f6f5');
@@ -93,8 +94,8 @@ export function drawVehicle(ctx: CanvasRenderingContext2D, d: VehDraw, t: number
     ctx.strokeStyle = '#3a3f43'; ctx.lineWidth = Math.max(1.2, 0.07 * cam.S);
     for (const [a, b] of posts) { const p0 = Pv(L(a, b, 0.75)), p1 = Pv(L(a, b, 1.92)); ctx.beginPath(); ctx.moveTo(p0.x, p0.y); ctx.lineTo(p1.x, p1.y); ctx.stroke(); }
     const roof = [L(Lh - 0.35, -Wh * 1.02, 1.95), L(Lh - 0.35, Wh * 1.02, 1.95), L(-0.75, Wh * 1.02, 1.95), L(-0.75, -Wh * 1.02, 1.95)].map(Pv);
-    poly(ctx, roof); ctx.fillStyle = shadeHex(BRAND.teal, 1.05); ctx.fill(); ctx.strokeStyle = 'rgba(0,0,0,0.35)'; ctx.lineWidth = 0.8 * cam.RS; ctx.stroke();
-    const e = Pv(L(Lh * 0.15 - 0.3, 0, 1.97)); emblem(ctx, e.x, e.y, 0.32 * cam.S, '#ffffff');
+    poly(ctx, roof); ctx.fillStyle = d.kind === 'service' ? shadeHex(BRAND.teal, 1.05) : d.color; ctx.fill(); ctx.strokeStyle = 'rgba(0,0,0,0.35)'; ctx.lineWidth = 0.8 * cam.RS; ctx.stroke();
+    if (d.kind === 'service') { const e = Pv(L(Lh * 0.15 - 0.3, 0, 1.97)); emblem(ctx, e.x, e.y, 0.32 * cam.S, '#ffffff'); }
   }
   if (isVan || isCart) {
     for (const side of [1, -1]) {

@@ -14,6 +14,7 @@ import { drawVehicle, drawPedestrian, drawBarrier, VehDraw } from './vehicles.ts
 import { pin, pill, drawFx, Fx } from './icons.ts';
 import { loadBranding } from './brand.ts';
 import { Ambient, setLifeScale } from './ambient.ts';
+import { Leisure, GraphJson, setLeisureScale } from './leisure.ts';
 import { NightLayer, darkness, Light } from './daynight.ts';
 import { setThunderHandler, WeatherView } from './weatherfx.ts';
 import { PixiStage, Drawable } from './pixi.ts';
@@ -50,7 +51,7 @@ let net: Network;
 /** loose decor from park.json (map-specific positions in PDF points) */
 interface Decor { sign?: number[]; flags?: number[][]; flowerBeds?: number[][]; lampRoad?: string; staffRoad?: string; focus?: Record<string, string>; trees?: number[][] }
 interface Golf { fairways: number[][][]; greens: number[][][]; bunkers: number[][][] }
-let sector: SectorJson & { terrain: { water: number[][][]; footpaths: number[][][]; roadSurfaces: number[][][]; golf?: Golf; forest?: number[][][] }; structures: Structure[]; facilities: { key: string; name: string; pt: number[] }[]; massing?: Massing; decor?: Decor;
+let sector: SectorJson & { terrain: { water: number[][][]; footpaths: number[][][]; roadSurfaces: number[][][]; golf?: Golf; forest?: number[][][]; canals?: GraphJson; golfPaths?: GraphJson }; structures: Structure[]; facilities: { key: string; name: string; pt: number[] }[]; massing?: Massing; decor?: Decor;
   apartments?: { id: string; name: string; center: number[]; armPt: number; widthPt: number; anglesDeg: number[]; entranceArm?: number; sign?: string } };
 const frames: Frame[] = [];
 let state: StateMsg | null = null;
@@ -72,6 +73,8 @@ let lastFrameT = 0;
 const statics: Obj[] = [];
 /** decorative park life (ducks, strollers, playing children); off with ?life=0 */
 let ambient: Ambient | null = null;
+/** boats on the canals and golf carts on the golf course (phase 4); off with ?life=0 */
+let leisure: Leisure | null = null;
 /** ground supersampling (?groundss=1 turns it off on a slow PC) */
 /** close-up camera (?zoom=2..6, ?focus=receptie|<huisnummer>|<letter>|x,y): everything is drawn at that scale */
 const ZOOM = Math.max(1, Math.min(6, Number(qs.get('zoom') ?? 1) || 1));
@@ -101,7 +104,7 @@ async function boot() {
   if (ZOOM > 1) {
     const f = focusPoint(qs.get('focus') ?? 'receptie');
     cam.S *= ZOOM; cam.cx = f.x; cam.cy = f.y;
-    setLifeScale(ZOOM);
+    setLifeScale(ZOOM); setLeisureScale(ZOOM);
   }
   const canvas = document.getElementById('world') as HTMLCanvasElement;
   canvas.width = cam.W; canvas.height = cam.H;
@@ -474,7 +477,8 @@ async function buildScene() {
       avoid: (p) => foot.some((h) => Math.hypot(p.x - h.pos.x, p.y - h.pos.y) < h.rad - 3.4) || bc.some((c) => pointInPolygon(p, c)),
     }, 11);
   }
-  (window as any).__scene = { ambient: ambient?.counts, blocks: blocks.map((b) => b.id), terrace: terraceSpots.length, trees: trees.length, baked: baked.length, live: live.length, houses: net.houses.length, statics: statics.length };
+  if (qs.get('life') !== '0') leisure = new Leisure({ canals: sector.terrain.canals, golfPaths: sector.terrain.golfPaths, toWorld: W, metersPerPt: sector.metersPerPt }, 23);
+  (window as any).__scene = { leisure: leisure?.counts, ambient: ambient?.counts, blocks: blocks.map((b) => b.id), terrace: terraceSpots.length, trees: trees.length, baked: baked.length, live: live.length, houses: net.houses.length, statics: statics.length };
 }
 
 class OccGrid {
@@ -709,6 +713,12 @@ function frame() {
     const hour = state ? Number(HOUR_FMT.format(new Date((state.park as unknown as { gameMs: number }).gameMs))) : 12;
     const wk = currentWeather()?.kind;
     for (const o of ambient.objects(now, hour >= 23 || hour < 7 || wk === 'regen' || wk === 'onweer')) if (!o.at || inView(o.at.x, o.at.y, 6)) objs.push(o);
+  }
+  if (leisure) {
+    leisure.step(now);
+    const hour = state ? Number(HOUR_FMT.format(new Date((state.park as unknown as { gameMs: number }).gameMs))) : 12;
+    const wk = currentWeather()?.kind;
+    for (const o of leisure.objects(now, hour >= 21 || hour < 7 || wk === 'regen' || wk === 'onweer')) if (!o.at || inView(o.at.x, o.at.y, 8)) objs.push(o);
   }
   objs.sort((a, b) => a.key - b.key);
   // occlusion fading: a tree/building only fades when its opaque pixels really cover a moving vehicle or

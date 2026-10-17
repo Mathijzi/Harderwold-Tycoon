@@ -14,6 +14,9 @@ import numpy as np
 from PIL import Image
 from scipy import ndimage as ndi
 import contourpy
+import sys, os
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from graphs import graph as skeleton_graph
 
 K = 0.24                       # meter per pt (zie docs: wegbreedte 25 pt = 6 m, kavelfront 85 pt = 20 m)
 # Camera: the projector derives its tilt from the aspect ratio of the view (SE = 2160 / (viewH * 3840 / viewW)).
@@ -172,6 +175,16 @@ for i, sl in enumerate(objs, start=1):
         pick = rng.choice(len(xs), size=k, replace=False)
         for j in pick: trees.append([float(xs[j]), float(ys[j]), 3.5])
 print('losse bomen', len(trees))
+
+# ------------------------------------------------------------------ fase 4: vaarroutes (grachten) en golfpaden
+# canals: water in the villa area (east of the entrance road); the golf ponds and the lake are not navigable
+canal_zone = np.zeros((H, W), bool); canal_zone[200:3300, 2450:4900] = True
+canals = skeleton_graph(seg['water'] & canal_zone, step=4, min_spur=60, tol=4.0)
+# golf paths: the thin paved paths on the golf course
+gz = np.zeros((H, W), bool); gz[1150:3250, 1000:2330] = True
+gz[1480:2010, 1690:2330] = False   # het hart: parkeerterrein en driving range zijn geen golfpaden
+golf_paths = skeleton_graph(ndi.binary_closing(ndi.binary_dilation(thin & gz, iterations=3), iterations=8), step=3, min_spur=30, tol=3.0)
+print('vaarroutes', len(canals['nodes']), 'knopen', len(canals['edges']), 'stukken; golfpaden', len(golf_paths['nodes']), len(golf_paths['edges']))
 
 # ------------------------------------------------------------------ road network (hand-made topology, shapes from the skeleton)
 sk_y, sk_x = np.nonzero(SKM)
@@ -477,7 +490,7 @@ park = {
         'Voorzieningsletters zijn tijdelijk gekoppeld aan de opdrachten van de basis (bijv. J = toiletten & douches); fase 3 maakt Harderwold-opdrachten.',
         'Golfpaden zijn voetpaden (geen rijbaan) in fase 1; golfkarren op de baan volgen in een latere fase.',
     ],
-    'terrain': {'water': water, 'footpaths': footpaths, 'roadSurfaces': big_paved, 'golf': golf, 'forest': forest},
+    'terrain': {'water': water, 'footpaths': footpaths, 'roadSurfaces': big_paved, 'golf': golf, 'forest': forest, 'canals': canals, 'golfPaths': golf_paths},
     'structures': structures, 'facilities': facilities, 'houses': park_houses, 'parkingClusters': clusters, 'staticBarriers': [],
     'massing': massing, 'apartments': apartments, 'parkingLot': lot, 'decor': decor,
 }

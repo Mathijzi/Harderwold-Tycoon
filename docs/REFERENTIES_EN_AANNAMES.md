@@ -188,3 +188,30 @@ Alle ingebouwde artiesten, labels, bedrijven en vermogende families zijn **verzo
 | Vermogend | Privekok, eigen boot, zakendeal op de golfbaan, poolparty, kunstwerk |
 | Families | Oma wordt 80, opa leert golfen, kano op avontuur, ruzie over de haag (nooit voor echte personen) |
 | Bekende gast (cameo) | Een algemene verhaallijn voor bekende gasten |
+
+### Varende boten en golfkarren (fase 4, 17 oktober 2026)
+
+**Hoe het werkt**
+- `src/web/projector/leisure.ts` regelt de boten en golfkarren. Het is decoratie op de projectie, net als de eenden en wandelaars: het draait alleen in de browser, kost de server niets en blijft weg bij de slagbomen.
+- De netwerken komen uit de plattegrond via `tools/harderwold/graphs.py`:
+  - vaarroutes: de hartlijnen van de grachten in de villawijk (`terrain.canals`);
+  - golfpaden: de hartlijnen van de smalle paden op de golfbaan (`terrain.golfPaths`).
+
+**Vaarregels**
+- Rechts houden: een boot vaart rechts van het midden van de gracht, zodat tegenliggers elkaar aan bakboord passeren.
+- Afstand houden: een boot remt achter een langzamere boot en stopt 7 m erachter.
+- Kruisingen: één boot tegelijk; wie het eerst komt, gaat eerst.
+- Doodlopend eind: de boot legt aan bij een steiger en draait daarna om. Soms legt een boot onderweg aan.
+- Snelheden: sloep 6 km/u, kano 3,5 km/u, SUP 2,5 km/u.
+- Bezetting: 11 sloepen, 6 kano's en 3 SUP's.
+- Boten varen ver genoeg van de oever om de steigers te mijden. De steigers zijn daarvoor ingekort tot 1,8 m in het water.
+
+**Golfkarren**
+- Er rijden 9 karren met 13 km/u over de golfpaden, met dezelfde regels voor afstand en kruisingen.
+- Bij een tee of green stappen de twee golfers uit (een met een club) en spelen even; daarna rijdt de kar verder.
+
+**Wanneer zichtbaar**
+- 's Nachts en bij regen of onweer liggen bijna alle boten aangemeerd en staan de karren binnen.
+- In het overzicht zijn boten en karren 1,5× groter getekend, zodat ze op de beamer leesbaar zijn (net als mensen en eenden). In een close-up hebben ze ware grootte.
+
+**Ruimte voor later:** de woonboten en het meer in het noordwesten vallen buiten beeld.
